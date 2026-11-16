@@ -15,6 +15,9 @@ export default function Admin(){
  const [settings,setSettings]=React.useState({voting_open:false,results_published:false});
  const [summary,setSummary]=React.useState(zero);
  const [results,setResults]=React.useState([]);
+ const [awards,setAwards]=React.useState([]);
+ const [photoUploading,setPhotoUploading]=React.useState(null);
+ const [photoStatus,setPhotoStatus]=React.useState('');
  const [showResults,setShowResults]=React.useState(false);
  React.useEffect(()=>{
    supabase.auth.getSession().then(({data})=>{setSession(data.session);setChecked(true)});
@@ -31,15 +34,17 @@ export default function Admin(){
  },[session?.user?.id]);
  const refresh=React.useCallback(async()=>{
    if(!authorized)return;
-   const [s,m,r]=await Promise.all([
+   const [s,m,r,a]=await Promise.all([
      supabase.from('sca_settings').select('voting_open,results_published').eq('id',1).single(),
      supabase.rpc('sca_admin_vote_summary'),
-     supabase.rpc('sca_admin_vote_results')
+     supabase.rpc('sca_admin_vote_results'),
+     supabase.from('sca_awards').select('id,title,slug,image_url,published').order('display_order')
    ]);
-   if(s.error||m.error||r.error){setError('No se pudieron cargar todos los datos: '+(s.error||m.error||r.error).message);return}
+   if(s.error||m.error||r.error||a.error){setError('No se pudieron cargar todos los datos: '+(s.error||m.error||r.error||a.error).message);return}
    setSettings(s.data);
    setSummary(m.data?.[0]||zero);
    setResults(r.data||[]);
+   setAwards(a.data||[]);
    setError('');
  },[authorized]);
  React.useEffect(()=>{if(authorized)refresh()},[authorized,refresh]);
@@ -56,6 +61,29 @@ export default function Admin(){
    else await refresh();
    setBusy(false);
  }
+
+ async function uploadAwardPhoto(award,file){
+   if(!file)return;
+   if(!['image/jpeg','image/png','image/webp'].includes(file.type)){
+     setPhotoStatus('Formato no admitido. Selecciona una imagen JPG, PNG o WebP.');
+     return;
+   }
+   if(file.size>8*1024*1024){setPhotoStatus('La imagen no puede superar 8 MB.');return}
+   setPhotoUploading(award.id);setPhotoStatus('Subiendo imagen…');
+   try{
+     const ext=file.type==='image/jpeg'?'jpg':file.type==='image/png'?'png':'webp';
+     const path=award.slug+'/'+crypto.randomUUID()+'.'+ext;
+     const {error:uploadError}=await supabase.storage.from('sca-awards').upload(path,file,{contentType:file.type,upsert:false});
+     if(uploadError)throw uploadError;
+     const {data}=supabase.storage.from('sca-awards').getPublicUrl(path);
+     const {error:updateError}=await supabase.from('sca_awards').update({image_url:data.publicUrl}).eq('id',award.id);
+     if(updateError)throw updateError;
+     setPhotoStatus('Fotografía guardada. Ya está disponible en la web pública.');
+     await refresh();
+   }catch(err){
+     setPhotoStatus('Error al guardar la fotografía: '+(err.message||'error desconocido'));
+   }finally{setPhotoUploading(null)}
+ }
  const totals=results.reduce((o,r)=>({...o,[r.award_id]:(o[r.award_id]||0)+Number(r.vote_count)}),{});
  const categories=Object.values(results.reduce((acc,r)=>{
    if(!acc[r.award_id])acc[r.award_id]={id:r.award_id,title:r.award_title,nominees:[]};
@@ -67,6 +95,21 @@ export default function Admin(){
  <div className="admin-metrics"><article><span>Votos recibidos</span><strong>{summary.total_votes}</strong><small>Elecciones por categoría</small></article><article><span>Participación</span><strong>{summary.total_participants}</strong><small>Papeletas identificadas por el modelo actual</small></article><article><span>Categorías</span><strong>{summary.award_count}</strong><small>Premios registrados</small></article></div>
  <div className="admin-panels"><section className="admin-panel"><span className="admin-eyebrow">CONTROL DE LA GALA</span><h2>Votaciones</h2><p>Abre o cierra la recepción de votos cuando lo decida la organización.</p><div className="admin-setting"><div><b>{settings.voting_open?'Votaciones abiertas':'Votaciones cerradas'}</b><small>{settings.voting_open?'La base de datos permite recibir votos válidos.':'No se aceptan votos actualmente.'}</small></div><button disabled={busy} className={settings.voting_open?'admin-danger':'admin-primary'} onClick={()=>{if(window.confirm(settings.voting_open?'¿Cerrar las votaciones?':'¿Abrir las votaciones? Confirma que el sistema de votación pública ya está preparado.'))changeSetting('voting_open',!settings.voting_open)}}>{settings.voting_open?'Cerrar votación':'Abrir votación'}</button></div><div className="admin-notice"><LockKeyhole size={17}/> La interfaz para emitir votos anónimos está pendiente de implementación. Mantén las votaciones cerradas hasta probarla.</div></section>
  <section className="admin-panel"><span className="admin-eyebrow">PUBLICACIÓN DE RESULTADOS</span><h2>Ganadores</h2><p>Los resultados solo se mostrarán públicamente tras completar la pantalla de revelación de la gala.</p><div className="admin-setting"><div><b>{settings.results_published?'Revelación autorizada':'Resultados ocultos'}</b><small>Este control no afecta a las consultas privadas del panel.</small></div><button disabled={busy} onClick={()=>{if(window.confirm('¿Cambiar el permiso de publicación de resultados?'))changeSetting('results_published',!settings.results_published)}}>{settings.results_published?'Ocultar resultados':'Autorizar revelación'}</button></div></section></div>
+
+ <section className="admin-panel admin-photos">
+   <span className="admin-eyebrow">IMÁGENES OFICIALES</span>
+   <h2>Fotografías de los premios</h2>
+   <p>Sube las fotos de los trofeos directamente desde aquí. La portada y las tarjetas de premios se actualizarán automáticamente. No necesitas modificar GitHub.</p>
+   <div className="admin-photo-grid">{awards.map(award=><article className="admin-photo-card" key={award.id}>
+     <div className="admin-photo-preview">{award.image_url?<img src={award.image_url} alt={award.title}/>:<span>Sin fotografía</span>}</div>
+     <div className="admin-photo-content"><strong>{award.title}</strong><small>{award.image_url?'Imagen configurada':'Pendiente de imagen oficial'}</small>
+       <label className="admin-photo-upload">{photoUploading===award.id?'Subiendo…':'Seleccionar fotografía'}
+         <input type="file" accept="image/jpeg,image/png,image/webp" disabled={Boolean(photoUploading)} onChange={e=>{const file=e.target.files?.[0];e.target.value='';uploadAwardPhoto(award,file)}}/>
+       </label>
+     </div>
+   </article>)}</div>
+   {photoStatus&&<p className="admin-photo-status" role="status">{photoStatus}</p>}
+ </section>
  <section className="admin-panel admin-results"><div className="admin-results-title"><div><span className="admin-eyebrow">ESCRUTINIO PRIVADO</span><h2>Resultados por premio</h2></div><button onClick={()=>setShowResults(v=>!v)}>{showResults?<EyeOff size={16}/>:<Eye size={16}/>} {showResults?'Ocultar cifras':'Ver cifras'}</button></div>{!showResults?<div className="admin-hidden"><EyeOff size={26}/> Los resultados están ocultos en pantalla. Pulsa «Ver cifras» para consultarlos.</div>:categories.length===0?<p>No hay candidatos registrados todavía.</p>:categories.map(c=><div className="admin-category" key={c.id}><h3>{c.title} <small>{totals[c.id]||0} votos</small></h3>{c.nominees.map(n=><div className="admin-vote" key={n.nominee_id}><div><span>{n.nominee_name}</span><b>{n.vote_count} votos · {totals[c.id]?Math.round(Number(n.vote_count)*100/totals[c.id]):0}%</b></div><div className="admin-bar"><div style={{width:(totals[c.id]?Number(n.vote_count)*100/totals[c.id]:0)+'%'}}/></div></div>)}</div>)}</section>
  </main>}</div>
 }
