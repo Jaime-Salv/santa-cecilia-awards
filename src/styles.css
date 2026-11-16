@@ -7,3 +7,31 @@
 @media(max-width:1120px){.site-nav{gap:18px}.header-actions{gap:11px}.admin-access span{display:none}.featured-prize{grid-template-columns:1fr 1fr}.prize-copy{padding:55px 38px}}
 @media(max-width:790px){.site-header{height:70px;padding:0 18px}.menu-toggle{display:block}.header-vote{display:none}.admin-access{padding:8px}.site-nav{display:none;position:absolute;top:70px;left:0;right:0;background:#17130e;border-bottom:1px solid #695235;padding:24px 22px;flex-direction:column;gap:25px;align-items:flex-start}.site-nav.open{display:flex}.nav-admin-mobile{display:flex!important;align-items:center;gap:8px;padding-top:15px;border-top:1px solid #453724;width:100%}.opening{min-height:660px}.opening h1{font-size:clamp(67px,13vw,100px);letter-spacing:-2px}.opening-body{padding:90px 18px 120px}.opening-overline{font-size:10px}.opening-bottom span{display:none}.opening-bottom{justify-content:center}.prize-section,.nominees-section{padding:68px 20px 75px}.featured-prize,.second-prize{grid-template-columns:1fr}.featured-prize .prize-visual{min-height:440px}.second-prize .prize-visual{min-height:350px;grid-row:1}.prize-copy,.second-copy{padding:52px 28px}.prize-copy h3,.second-copy h3{font-size:clamp(66px,13vw,88px)}.section-heading{margin-bottom:40px}.nominees-heading{padding:62px 0 38px}.site-footer{flex-wrap:wrap}.site-footer p{order:3;width:100%;margin:0}.voting-frame{padding:70px 22px}}
 @media(max-width:490px){.opening h1{font-size:clamp(61px,16vw,83px)}.opening-description{font-size:13px}.opening-buttons{gap:20px}.gold-button{padding:17px 16px}.opening-arc{width:470px;height:470px}.edition-line{font-size:9px;letter-spacing:1.5px;gap:9px}.edition-line span{width:25px}.prize-visual.principal{min-height:360px}.pedestal{bottom:84px;transform:scale(.8)}.trophy-symbol{font-size:160px}.puppy-symbol{font-size:170px}.category-card{padding:24px 18px}.category-header{font-size:9px}.nominee-tiles{grid-template-columns:1fr 1fr;gap:10px}.nominee-media{height:155px}.nominee-info{padding:12px}.nominee-info strong{font-size:21px}.voting-frame h2{font-size:55px}.site-footer{padding:30px 20px}.site-footer a{font-size:10px}}
+
+/* Integración fotográfica oficial — el texto sigue siendo legible en cualquier formato */
+.opening-trophy{position:absolute;z-index:0;right:3%;bottom:5%;height:min(79%,780px);max-width:45%;width:auto;object-fit:contain;filter:drop-shadow(0 20px 44px #0008);mask-image:linear-gradient(to bottom,#000 0%,#000 77%,transparent 99%);pointer-events:none}
+.opening-body{z-index:1;position:relative;width:100%;max-width:1280px;text-align:left;padding-left:clamp(24px,5vw,65px);padding-right:min(42%,540px);margin:0 auto}
+.opening-body .edition-line,.opening-body .opening-year,.opening-body .opening-buttons{justify-content:flex-start}
+.opening-body .opening-description{margin-left:0;margin-right:0}
+.opening-body h1{font-size:clamp(78px,8.5vw,133px)}
+.opening-body .opening-overline{max-width:480px}
+.official-trophy{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;z-index:2}
+.prize-visual.principal:has(.official-trophy:not([style*="display: none"])) {background:#0b0907}
+.prize-visual.secondary:has(.official-trophy:not([style*="display: none"])) {background:#0b0907}
+.prize-visual .visual-caption{z-index:3;text-shadow:0 2px 5px #000}
+.trophy-fallback{transition:opacity .25s}
+@media(max-width:790px){
+ .opening-trophy{height:64%;max-width:90%;right:50%;transform:translateX(50%);bottom:-8%;opacity:.56;filter:brightness(.7) drop-shadow(0 12px 28px #000)}
+ .opening-body{text-align:center;padding:65px 20px 170px;max-width:780px}
+ .opening-body .edition-line,.opening-body .opening-year,.opening-body .opening-buttons{justify-content:center}
+ .opening-body .opening-description{margin-left:auto;margin-right:auto}
+ .opening-body h1{font-size:clamp(62px,13vw,100px);text-shadow:0 6px 22px #000}
+ .opening-body .opening-overline{max-width:none}
+}
+@media(max-width:490px){
+ .opening-body{padding:65px 16px 190px}
+ .opening-body h1{font-size:clamp(58px,15vw,78px)}
+ .opening-trophy{height:58%;bottom:-7%;opacity:.42}
+ .prize-visual.principal{min-height:410px}
+ .prize-visual.secondary{min-height:400px}
+}
