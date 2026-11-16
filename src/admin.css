@@ -11,3 +11,20 @@
 .admin-photo-upload input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .admin-photo-upload:focus-within{outline:2px solid #fff;outline-offset:3px}
 .admin-photo-status{padding:15px;color:#dec8a3;border:1px solid #695234;margin-top:20px}
+
+.admin-nominee-list{display:grid;gap:12px;margin-top:25px}
+.admin-nominee-group{border:1px solid #51432f;background:#211d17}
+.admin-nominee-group summary{cursor:pointer;padding:19px;display:flex;justify-content:space-between;align-items:center;gap:15px;list-style:none}
+.admin-nominee-group summary::-webkit-details-marker{display:none}
+.admin-nominee-group summary span{font:500 27px 'Cormorant Garamond',Georgia,serif}
+.admin-nominee-group summary small{color:#b89d70;font-size:11px}
+.admin-nominee-items{padding:0 16px 18px;display:grid;gap:10px}
+.admin-nominee-item{display:flex;gap:17px;align-items:center;background:#14120f;border:1px solid #433624;padding:12px;flex-wrap:wrap}
+.admin-nominee-thumb{width:76px;height:93px;object-fit:cover;background:#373024;border:1px solid #514329;flex-shrink:0}
+.admin-nominee-thumb.empty{display:grid;place-items:center;font-size:10px;color:#96846a}
+.admin-nominee-controls{display:flex;flex-direction:column;align-items:flex-start;gap:8px;flex:1;min-width:180px}
+.admin-nominee-controls strong{font-size:13px;line-height:1.5}
+.admin-nominee-controls .admin-photo-upload{margin-top:0;font-size:10px;padding:9px 12px}
+.admin-video-label{display:grid;gap:6px;font-size:10px;color:#a99780;width:100%;max-width:380px}
+.admin-video-label input{border:1px solid #53442d;background:#0a0908;color:#f6e8d0;padding:10px;font:inherit;width:100%}
+@media(max-width:620px){.admin-nominee-item{align-items:flex-start}.admin-nominee-item>button{margin-left:auto}.admin-nominee-group summary span{font-size:23px}}
