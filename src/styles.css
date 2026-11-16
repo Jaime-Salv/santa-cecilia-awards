@@ -35,3 +35,11 @@
  .prize-visual.principal{min-height:410px}
  .prize-visual.secondary{min-height:400px}
 }
+
+/* Fallback elegante si las fotos aún no se han subido */
+.opening:not(.with-photo) .opening-body{text-align:center;padding:90px 20px 112px;max-width:1030px}
+.opening:not(.with-photo) .edition-line,.opening:not(.with-photo) .opening-year,.opening:not(.with-photo) .opening-buttons{justify-content:center}
+.opening:not(.with-photo) .opening-description{margin-left:auto;margin-right:auto}
+.opening:not(.with-photo) .opening-body h1{font-size:clamp(82px,10vw,158px)}
+@media(max-width:790px){.opening:not(.with-photo) .opening-body{padding:90px 18px 120px}.opening:not(.with-photo) .opening-body h1{font-size:clamp(67px,13vw,100px)}}
+@media(max-width:490px){.opening:not(.with-photo) .opening-body h1{font-size:clamp(61px,16vw,83px)}}
