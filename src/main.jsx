@@ -2,6 +2,7 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {ArrowRight,ArrowDown,LockKeyhole,Award,Menu,X} from 'lucide-react';
 import './styles.css';
+import Admin from './Admin';
 import { supabase } from './supabase';
 function App(){
  const [menu,setMenu]=React.useState(false);
@@ -24,4 +25,4 @@ function App(){
  <section id="nominados" className="section nominees"><div className="section-top"><span>02 / LOS NOMINADOS</span><span>REVELACIÓN PRÓXIMAMENTE</span></div><div className="center"><span className="overline">QUE COMIENCEN LAS APUESTAS</span><h2>El honor de estar<br/><em>nominado.</em></h2><p>Aquí aparecerán todas las categorías, sus nominados y sus momentos más memorables en foto y vídeo.</p>{categories.length ? <div className="category-grid">{categories.map(category=><article className="category" key={category.id}><span className="overline">CATEGORÍA OFICIAL</span><h3>{category.title}</h3>{category.description&&<p>{category.description}</p>}{category.nominees.length?<div className="nominee-grid">{category.nominees.map(n=><div className="nominee" key={n.id}>{n.photo_url&&<img src={n.photo_url} alt={n.name} loading="lazy"/>}<strong>{n.name}</strong>{n.description&&<p>{n.description}</p>}{n.video_url&&<a href={n.video_url} target="_blank" rel="noopener noreferrer">VER VÍDEO ↗</a>}</div>)}</div>:<small>Los nominados se anunciarán próximamente.</small>}</article>)}</div>:<div className="empty"><Award size={28}/><strong>La lista oficial se está preparando</strong><span>Publicaremos los nominados cuando la organización dé el visto bueno.</span></div>}</div></section>
  <section id="votacion" className="section vote"><div className="vote-inner"><span className="overline">03 / LA DECISIÓN FINAL</span><h2>Tu voto.<br/><em>Su destino.</em></h2><p>Cuando la organización abra las votaciones, los miembros autorizados de la banda podrán elegir a sus favoritos. Un voto por persona y categoría.</p><div className="vote-locked"><LockKeyhole size={18}/> VOTACIONES AÚN NO DISPONIBLES</div><small>Los resultados permanecerán ocultos hasta su revelación en la gala.</small></div></section></main><footer><span>SC ✦ AWARDS</span><span>HECHO PARA LA BANDA, CON MUCHO CARIÑO Y POCA VERGÜENZA.</span><span>© 2026</span></footer></>;
 }
-createRoot(document.getElementById('root')).render(<App/>);
+createRoot(document.getElementById('root')).render(window.location.pathname.replace(/\/$/,'')==='/admin'?<Admin/>:<App/>);
