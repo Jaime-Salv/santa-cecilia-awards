@@ -66,7 +66,7 @@ function App() {
       <section className={heroPhotoReady ? "opening with-photo" : "opening"}>
         <div className="opening-grain" aria-hidden="true"/>
         <div className="opening-arc" aria-hidden="true"/>
-        <img className="opening-trophy" src="/images/guante-de-mickey.webp" alt="Trofeo Guante de Mickey 2026, guante blanco firmado sobre base negra" onLoad={() => setHeroPhotoReady(true)} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+        <img className="opening-trophy" src={categories.find(c => c.slug === "guante-de-mickey")?.image_url || "/images/guante-de-mickey.webp"} alt="Trofeo Guante de Mickey 2026, guante blanco firmado sobre base negra" onLoad={(e) => { e.currentTarget.style.display = "block"; setHeroPhotoReady(true); }} onError={(e) => { e.currentTarget.style.display = "none"; setHeroPhotoReady(false); }} />
         <div className="opening-body">
           <div className="edition-line"><span/> LA GRAN GALA DE LA BANDA <span/></div>
           <div className="opening-overline">Una celebración de lo extraordinariamente nuestro</div>
@@ -91,7 +91,7 @@ function App() {
           <div className="prize-visual principal">
             <div className="light-halo" aria-hidden="true"/>
             <div className="pedestal" aria-hidden="true"><div className="pedestal-top"/><div className="pedestal-base"/></div>
-            <div className="trophy-symbol trophy-fallback" aria-hidden="true">✋</div><img className="official-trophy" src="/images/guante-de-mickey.webp" alt="Fotografía oficial del Guante de Mickey 2026" loading="lazy" onLoad={(e) => {e.currentTarget.previousElementSibling.style.opacity = "0";}} onError={(e) => {e.currentTarget.style.display = "none";}}/>
+            <div className="trophy-symbol trophy-fallback" aria-hidden="true">✋</div><img className="official-trophy" src={categories.find(c => c.slug === "guante-de-mickey")?.image_url || "/images/guante-de-mickey.webp"} alt="Fotografía oficial del Guante de Mickey 2026" loading="lazy" onLoad={(e) => {e.currentTarget.style.display="block"; e.currentTarget.previousElementSibling.style.opacity = "0";}} onError={(e) => {e.currentTarget.style.display = "none"; e.currentTarget.previousElementSibling.style.opacity="1";}}/>
             <div className="visual-caption"><span>EL GRAN PREMIO</span><span>✦ 2026 ✦</span></div>
           </div>
           <div className="prize-copy">
@@ -114,7 +114,7 @@ function App() {
           </div>
           <div className="prize-visual secondary">
             <div className="light-halo" aria-hidden="true"/>
-            <div className="trophy-symbol puppy-symbol trophy-fallback" aria-hidden="true">♛</div><img className="official-trophy" src="/images/cachorro-del-ano.webp" alt="Fotografía oficial del trofeo dorado Cachorro del Año" loading="lazy" onLoad={(e) => {e.currentTarget.previousElementSibling.style.opacity = "0";}} onError={(e) => {e.currentTarget.style.display = "none";}}/>
+            <div className="trophy-symbol puppy-symbol trophy-fallback" aria-hidden="true">♛</div><img className="official-trophy" src={categories.find(c => c.slug === "cachorro-del-ano")?.image_url || "/images/cachorro-del-ano.webp"} alt="Fotografía oficial del trofeo dorado Cachorro del Año" loading="lazy" onLoad={(e) => {e.currentTarget.style.display="block"; e.currentTarget.previousElementSibling.style.opacity = "0";}} onError={(e) => {e.currentTarget.style.display = "none"; e.currentTarget.previousElementSibling.style.opacity="1";}}/>
             <div className="visual-caption"><span>NUEVA GENERACIÓN</span><span>✦ 2026 ✦</span></div>
           </div>
         </div>
