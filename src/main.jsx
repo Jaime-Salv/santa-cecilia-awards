@@ -12,6 +12,7 @@ const featured = [
 
 function App() {
   const [menu, setMenu] = React.useState(false);
+  const [heroPhotoReady, setHeroPhotoReady] = React.useState(false);
   const [categories, setCategories] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [votingOpen, setVotingOpen] = React.useState(false);
@@ -62,10 +63,10 @@ function App() {
     </header>
 
     <main id="inicio">
-      <section className="opening">
+      <section className={heroPhotoReady ? "opening with-photo" : "opening"}>
         <div className="opening-grain" aria-hidden="true"/>
         <div className="opening-arc" aria-hidden="true"/>
-        <img className="opening-trophy" src="/images/guante-de-mickey.webp" alt="Trofeo Guante de Mickey 2026, guante blanco firmado sobre base negra" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+        <img className="opening-trophy" src="/images/guante-de-mickey.webp" alt="Trofeo Guante de Mickey 2026, guante blanco firmado sobre base negra" onLoad={() => setHeroPhotoReady(true)} onError={(e) => { e.currentTarget.style.display = "none"; }} />
         <div className="opening-body">
           <div className="edition-line"><span/> LA GRAN GALA DE LA BANDA <span/></div>
           <div className="opening-overline">Una celebración de lo extraordinariamente nuestro</div>
