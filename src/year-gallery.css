@@ -21,3 +21,5 @@
 .year-recap-empty span{font-size:12px;color:#ad9b84}
 @media(max-width:790px){.year-recap{padding:70px 20px 50px}.year-recap-slide{height:285px;flex-basis:min(330px,79vw)}.year-recap-head h2{font-size:61px}}
 @media(max-width:490px){.year-recap-head{flex-direction:column;align-items:flex-start}.year-recap-buttons{align-self:flex-end}.year-recap-slide{height:255px;flex-basis:82vw}.year-recap-bottom{flex-wrap:wrap}.year-recap-head h2{font-size:55px}}
+
+.year-recap-slide video{width:100%;height:100%;object-fit:cover;display:block;background:#090806}.year-recap-slide:has(video):after{pointer-events:none}.year-recap-video-label{position:absolute;z-index:2;top:12px;left:12px;display:inline-flex;gap:6px;align-items:center;color:#f8e8c7;background:#0c0a09bb;padding:7px 9px;font-size:10px;letter-spacing:1px}.year-recap-slide video:focus-visible{outline:2px solid #e9c58f;outline-offset:-3px}
