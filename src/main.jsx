@@ -88,8 +88,23 @@ function App(){
     <button className="back-categories" onClick={backToList}><ArrowLeft size={16}/> TODAS LAS CATEGORÍAS</button>
     <div className="nominee-detail-intro"><span className="eyebrow gold-text">SANTA CECILIA AWARDS · NOMINACIONES</span><h2>{active.title}</h2>{active.description&&<p>{active.description}</p>}</div>
     {active.nominees.length ? <div className="nominee-detail-grid">{active.nominees.map((n,i)=><article className="nominee-detail-card" key={n.id}>
-     <div className="nominee-detail-media">{n.photo_url?<img src={n.photo_url} alt={'Fotografía de '+n.name} loading="lazy"/>:n.video_url&&/\\.mp4(?:\\?|$)/i.test(n.video_url)?<video src={n.video_url} controls playsInline preload="metadata" aria-label={'Vídeo de '+n.name}/>:<div className="no-nominee-image"><ImageIcon size={27} strokeWidth={1}/><span>FOTOGRAFÍA PENDIENTE</span></div>}</div>
-     <div className="nominee-detail-info"><span>NOMINADO {String(i+1).padStart(2,'0')}</span><h3>{n.name}</h3>{n.description&&<p>{n.description}</p>}{n.video_url&&<a href={n.video_url} target="_blank" rel="noopener noreferrer"><Film size={15}/> {n.video_url.match(/\\.mp4(?:\\?|$)/i)?'ABRIR VÍDEO':'VER VÍDEO DEL MOMENTO'} <ArrowRight size={14}/></a>}</div>
+     <div className="nominee-detail-media">
+      {n.photo_url
+        ? <img src={n.photo_url} alt={'Fotografía de '+n.name} loading="lazy"/>
+        : !n.video_url || !n.video_url.toLowerCase().split('?')[0].endsWith('.mp4')
+          ? <div className="no-nominee-image"><ImageIcon size={27} strokeWidth={1}/><span>FOTOGRAFÍA PENDIENTE</span></div>
+          : <video src={n.video_url} controls playsInline preload="metadata" aria-label={'Vídeo de '+n.name}/>}
+     </div>
+     <div className="nominee-detail-info">
+      <span>NOMINADO {String(i+1).padStart(2,'0')}</span>
+      <h3>{n.name}</h3>
+      {n.description&&<p>{n.description}</p>}
+      {n.video_url && (n.video_url.toLowerCase().split('?')[0].endsWith('.mp4')
+        ? n.photo_url
+          ? <div className="nominee-extra-video"><span><Film size={14}/> VÍDEO DEL NOMINADO</span><video src={n.video_url} controls playsInline preload="metadata" aria-label={'Vídeo de '+n.name}/></div>
+          : null
+        : <a href={n.video_url} target="_blank" rel="noopener noreferrer"><Film size={15}/> VER VÍDEO DEL MOMENTO <ArrowRight size={14}/></a>)}
+     </div>
     </article>)}</div> : <div className="nominees-empty"><Award size={25}/><strong>Nominados pendientes de publicación</strong><span>La organización está terminando de revisar esta categoría.</span></div>}
     <button className="back-categories bottom" onClick={backToList}><ArrowLeft size={16}/> VOLVER A LOS PREMIOS</button>
    </>}
