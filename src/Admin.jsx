@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 import { LockKeyhole, LogOut, RefreshCw, Eye, EyeOff, ChartNoAxesColumn, ShieldCheck, ArrowLeft } from 'lucide-react';
 import './admin.css';
 import YearGalleryAdmin from './YearGalleryAdmin';
+import NomineeMediaAdmin from './NomineeMediaAdmin';
 
 const zero = {total_votes:0,total_participants:0,award_count:0};
 export default function Admin(){
@@ -97,24 +98,30 @@ export default function Admin(){
    else {setPhotoStatus('Candidato actualizado correctamente.');await refresh();}
    setBusy(false);
  }
- async function uploadNomineePhoto(nominee,file){
-   if(!file)return;
-   if(!['image/jpeg','image/png','image/webp'].includes(file.type)){setPhotoStatus('Imagen no admitida. Usa JPG, PNG o WebP.');return;}
-   if(file.size>8*1024*1024){setPhotoStatus('Máximo 8 MB por fotografía.');return;}
-   setPhotoUploading(nominee.id);
-   setPhotoStatus('Subiendo fotografía del nominado…');
-   try{
-     const ext=file.type==='image/jpeg'?'jpg':file.type==='image/png'?'png':'webp';
-     const path='nominees/'+nominee.id+'/'+crypto.randomUUID()+'.'+ext;
-     const {error}=await supabase.storage.from('sca-awards').upload(path,file,{contentType:file.type,upsert:false});
-     if(error)throw error;
-     const {data}=supabase.storage.from('sca-awards').getPublicUrl(path);
-     const {error:saveError}=await supabase.from('sca_nominees').update({photo_url:data.publicUrl}).eq('id',nominee.id);
-     if(saveError)throw saveError;
-     setPhotoStatus('Foto del nominado guardada.');
-     await refresh();
-   }catch(e){setPhotoStatus('No se pudo subir la foto: '+(e.message||'error'));}
-   finally{setPhotoUploading(null)}
+ async function uploadNomineeMedia(nominee,file){
+  if(!file)return;
+  const isVideo=file.type==='video/mp4';
+  const types=['image/jpeg','image/png','image/webp','video/mp4'];
+  if(!types.includes(file.type)){setPhotoStatus('Formato no admitido: usa JPG, PNG, WebP o MP4.');return}
+  if(file.size>(isVideo?45:8)*1024*1024){setPhotoStatus('El archivo supera el límite: 8 MB para fotos o 45 MB para vídeos.');return}
+  setPhotoUploading(nominee.id);
+  setPhotoStatus('Subiendo '+(isVideo?'vídeo':'fotografía')+' de '+nominee.name+'…');
+  try{
+   const ext=isVideo?'mp4':file.type==='image/jpeg'?'jpg':file.type==='image/png'?'png':'webp';
+   const path='nominees/'+nominee.id+'/'+crypto.randomUUID()+'.'+ext;
+   const {error:uploadError}=await supabase.storage.from('sca-nominee-media').upload(path,file,{contentType:file.type,upsert:false,cacheControl:'3600'});
+   if(uploadError)throw uploadError;
+   const {data}=supabase.storage.from('sca-nominee-media').getPublicUrl(path);
+   const column=isVideo?'video_url':'photo_url';
+   const {error:saveError}=await supabase.from('sca_nominees').update({[column]:data.publicUrl}).eq('id',nominee.id);
+   if(saveError){
+    await supabase.storage.from('sca-nominee-media').remove([path]);
+    throw saveError;
+   }
+   await refresh();
+   setPhotoStatus((isVideo?'Vídeo':'Fotografía')+' de '+nominee.name+' guardado correctamente. El nominado conserva su estado de publicación.');
+  }catch(e){setPhotoStatus('Error al subir archivo: '+(e.message||'error desconocido'))}
+  finally{setPhotoUploading(null)}
  }
 
  const totals=results.reduce((o,r)=>({...o,[r.award_id]:(o[r.award_id]||0)+Number(r.vote_count)}),{});
@@ -148,17 +155,11 @@ export default function Admin(){
  <section className="admin-panel admin-photos">
    <span className="admin-eyebrow">CANDIDATOS DE LA GALA</span>
    <h2>Revisar nominados</h2>
-   <p>Las nominaciones del documento original están en borrador. Confirma cada una antes de hacerla visible públicamente. También puedes añadir su fotografía y enlace de vídeo.</p>
+   <p>Las nominaciones del documento original están en borrador. Confirma cada una antes de hacerla visible públicamente. Arrastra aquí las fotos verticales y los vídeos MP4 sobre cada nominado, o selecciona archivos desde tu equipo.</p>
    <div className="admin-nominee-list">{awards.filter(a=>nominees.some(n=>n.award_id===a.id)).map(a=><details key={a.id} className="admin-nominee-group">
      <summary><span>{a.title}</span><small>{nominees.filter(n=>n.award_id===a.id&&n.published).length} / {nominees.filter(n=>n.award_id===a.id).length} publicados</small></summary>
      <div className="admin-nominee-items">{nominees.filter(n=>n.award_id===a.id).map(n=><article className="admin-nominee-item" key={n.id}>
-       {n.photo_url?<img className="admin-nominee-thumb" src={n.photo_url} alt={n.name}/>:<div className="admin-nominee-thumb empty">Sin foto</div>}
-       <div className="admin-nominee-controls"><strong>{n.name}</strong><label className="admin-photo-upload">Subir foto
-         <input type="file" accept="image/jpeg,image/png,image/webp" disabled={Boolean(photoUploading)||busy} onChange={e=>{const file=e.target.files?.[0];e.target.value='';uploadNomineePhoto(n,file)}}/>
-       </label>
-       <label className="admin-video-label">Vídeo (enlace)
-         <input type="url" key={n.id+'-'+(n.video_url||'')} defaultValue={n.video_url||''} placeholder="https://…" onBlur={e=>{const value=e.target.value.trim();if(value!==(n.video_url||''))updateNominee(n,{video_url:value||null})}}/>
-       </label></div>
+       <div className="admin-nominee-controls"><strong>{n.name}</strong><NomineeMediaAdmin nominee={n} busy={busy||Boolean(photoUploading)} onUpload={uploadNomineeMedia} onSave={updateNominee}/></div>
        <button type="button" disabled={busy||Boolean(photoUploading)} className={n.published?'admin-danger':'admin-primary'} onClick={()=>updateNominee(n,{published:!n.published})}>{n.published?'Ocultar':'Publicar'}</button>
      </article>)}</div>
    </details>)}</div>
