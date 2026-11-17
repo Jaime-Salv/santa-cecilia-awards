@@ -4,16 +4,17 @@ import { supabase } from './supabase';
 import './year-gallery-admin.css';
 
 const BUCKET='sca-gallery';
-const ALLOWED=['image/jpeg','image/png','image/webp'];
-const MAX_BYTES=8*1024*1024;
+const ALLOWED=['image/jpeg','image/png','image/webp','video/mp4'];
+const IMAGE_LIMIT=8*1024*1024;
+const VIDEO_LIMIT=45*1024*1024;
 
 function PhotoEditor({photo,index,total,busy,onSave,onMove,onRemove}){
  const [caption,setCaption]=React.useState(photo.caption||'');
  React.useEffect(()=>setCaption(photo.caption||''),[photo.caption]);
  return <div className="gallery-editor-photo">
-  <img src={photo.image_url} alt={photo.caption||'Fotografía del año 2026'} loading="lazy"/>
+  {photo.media_type==='video'?<video src={photo.image_url} controls preload="metadata" playsInline aria-label={photo.caption||'Vídeo del año 2026'}/>:<img src={photo.image_url} alt={photo.caption||'Fotografía del año 2026'} loading="lazy"/>}
   <div className="gallery-editor-fields">
-   <span className="gallery-editor-pos">FOTO {String(index+1).padStart(2,'0')} / {String(total).padStart(2,'0')}</span>
+   <span className="gallery-editor-pos">{photo.media_type==='video'?'VÍDEO':'FOTO'} {String(index+1).padStart(2,'0')} / {String(total).padStart(2,'0')}</span>
    <label>Descripción o pie de foto
     <input type="text" maxLength={160} value={caption} placeholder="Ej.: Nuestra actuación en Sevilla" onChange={e=>setCaption(e.target.value)}/>
    </label>
@@ -37,7 +38,7 @@ export default function YearGalleryAdmin(){
  const [uploadPublished,setUploadPublished]=React.useState(true);
 
  const reload=React.useCallback(async()=>{
-  const {data,error}=await supabase.from('sca_year_photos').select('id,storage_path,image_url,caption,sort_order,published,created_at').order('sort_order').order('created_at');
+  const {data,error}=await supabase.from('sca_year_photos').select('id,storage_path,image_url,caption,sort_order,published,created_at,media_type').order('sort_order').order('created_at');
   if(error)setMessage('No se pudo cargar la galería: '+error.message);
   else setPhotos(data||[]);
   setLoading(false);
@@ -49,23 +50,24 @@ export default function YearGalleryAdmin(){
   const files=Array.from(event.target.files||[]);
   event.target.value='';
   if(!files.length)return;
-  if(files.length>20){setMessage('Sube hasta 20 fotografías en cada tanda.');return;}
-  setBusy(true);setMessage('Subiendo fotografías…');
+  if(files.length>20){setMessage('Sube hasta 20 archivos por tanda.');return;}
+  setBusy(true);setMessage('Subiendo fotos y vídeos…');
   let nextOrder=photos.reduce((m,p)=>Math.max(m,p.sort_order),0)+10;
   let success=0,failed=[];
   for(const file of files){
-   if(!ALLOWED.includes(file.type)||file.size>MAX_BYTES){failed.push(file.name+': formato no válido o tamaño superior a 8 MB');continue;}
-   const ext=file.type==='image/jpeg'?'jpg':file.type==='image/png'?'png':'webp';
+   const isVideo=file.type==='video/mp4';
+   if(!ALLOWED.includes(file.type)||file.size>(isVideo?VIDEO_LIMIT:IMAGE_LIMIT)){failed.push(file.name+': formato no válido o tamaño excesivo (fotos 8 MB, MP4 45 MB)');continue;}
+   const ext=isVideo?'mp4':file.type==='image/jpeg'?'jpg':file.type==='image/png'?'png':'webp';
    const path='2026/'+crypto.randomUUID()+'.'+ext;
    const {error:uploadError}=await supabase.storage.from(BUCKET).upload(path,file,{contentType:file.type,upsert:false});
    if(uploadError){failed.push(file.name+': '+uploadError.message);continue;}
    const {data:urlData}=supabase.storage.from(BUCKET).getPublicUrl(path);
-   const {error:dbError}=await supabase.from('sca_year_photos').insert({storage_path:path,image_url:urlData.publicUrl,caption:'',sort_order:nextOrder,published:uploadPublished});
+   const {error:dbError}=await supabase.from('sca_year_photos').insert({storage_path:path,image_url:urlData.publicUrl,caption:'',sort_order:nextOrder,published:uploadPublished,media_type:isVideo?'video':'image'});
    if(dbError){await supabase.storage.from(BUCKET).remove([path]);failed.push(file.name+': '+dbError.message);continue;}
    success++;nextOrder+=10;
   }
   await reload();
-  setMessage(success+' fotografía(s) guardadas.'+(failed.length?' Problemas: '+failed.join('; '):''));
+  setMessage(success+' archivo(s) guardados.'+(failed.length?' Problemas: '+failed.join('; '):''));
   setBusy(false);
  }
  async function save(photo,changes){
@@ -87,27 +89,27 @@ export default function YearGalleryAdmin(){
   await reload();setBusy(false);
  }
  async function remove(photo){
-  if(!window.confirm('¿Eliminar esta fotografía del carrusel? Esta operación no se puede deshacer.'))return;
+  if(!window.confirm('¿Eliminar este archivo del carrusel? Esta operación no se puede deshacer.'))return;
   setBusy(true);setMessage('');
   const {error}=await supabase.from('sca_year_photos').delete().eq('id',photo.id);
   if(error){setMessage('No se pudo borrar: '+error.message);setBusy(false);return;}
   const {error:storageError}=await supabase.storage.from(BUCKET).remove([photo.storage_path]);
-  setMessage(storageError?'Fotografía retirada del carrusel, pero el archivo requiere limpieza: '+storageError.message:'Fotografía eliminada.');
+  setMessage(storageError?'Elemento retirado del carrusel, pero el archivo requiere limpieza: '+storageError.message:'Elemento eliminado.');
   await reload();setBusy(false);
  }
  return <section className="admin-panel admin-gallery-section" id="admin-recuerdos">
-  <div className="admin-gallery-header"><div><span className="admin-eyebrow">PORTADA · RECUERDOS DEL AÑO</span><h2>¿Cómo ha ido el 2026?</h2><p>Controla el carrusel horizontal de la página principal. Añade fotos, escribe pies de foto, cambia el orden y oculta o publica imágenes.</p></div><button type="button" disabled={busy} onClick={reload}><RefreshCcw size={16}/> Actualizar</button></div>
+  <div className="admin-gallery-header"><div><span className="admin-eyebrow">PORTADA · RECUERDOS DEL AÑO</span><h2>¿Cómo ha ido el 2026?</h2><p>Controla el carrusel horizontal de la página principal. Añade fotos y vídeos MP4, escribe pies de foto, cambia el orden y oculta o publica imágenes.</p></div><button type="button" disabled={busy} onClick={reload}><RefreshCcw size={16}/> Actualizar</button></div>
   <div className="gallery-editor-upload">
    <UploadCloud size={30} color="#d2b075"/>
-   <strong>Subir fotografías</strong><span>JPG, PNG o WebP. Hasta 8 MB por imagen, 20 por tanda.</span>
-   <label className="gallery-editor-publish"><input type="checkbox" checked={uploadPublished} onChange={e=>setUploadPublished(e.target.checked)}/> Publicar automáticamente las fotos nuevas</label>
-   <label className="admin-photo-upload gallery-upload-button">{busy?'Procesando…':'Elegir fotografías'}
-     <input type="file" multiple accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={upload}/>
+   <strong>Subir fotos y vídeos</strong><span>JPG, PNG o WebP (8 MB máximo) y MP4 (45 MB máximo). Hasta 20 archivos por tanda. Recomendamos vídeos cortos y comprimidos.</span>
+   <label className="gallery-editor-publish"><input type="checkbox" checked={uploadPublished} onChange={e=>setUploadPublished(e.target.checked)}/> Publicar automáticamente los archivos nuevos</label>
+   <label className="admin-photo-upload gallery-upload-button">{busy?'Procesando…':'Elegir fotos o vídeos'}
+     <input type="file" multiple accept="image/jpeg,image/png,image/webp,video/mp4" disabled={busy} onChange={upload}/>
    </label>
   </div>
   {message&&<p className="admin-photo-status" role="status">{message}</p>}
   <div className="gallery-editor-list">
-   {loading?<p>Cargando imágenes…</p>:photos.length===0?<p>No hay imágenes todavía. Sube las primeras fotos para llenar el carrusel de la web.</p>:photos.map((photo,index)=><PhotoEditor key={photo.id} photo={photo} index={index} total={photos.length} busy={busy} onSave={save} onMove={move} onRemove={remove}/>)}
+   {loading?<p>Cargando imágenes…</p>:photos.length===0?<p>No hay imágenes ni vídeos todavía. Sube los primeros archivos para llenar el carrusel de la web.</p>:photos.map((photo,index)=><PhotoEditor key={photo.id} photo={photo} index={index} total={photos.length} busy={busy} onSave={save} onMove={move} onRemove={remove}/>)}
   </div>
  </section>;
 }
