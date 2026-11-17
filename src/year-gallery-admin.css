@@ -1,0 +1,23 @@
+
+.admin-gallery-section{margin-top:18px}
+.admin-gallery-header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}
+.admin-gallery-header h2{margin:13px 0}
+.gallery-editor-upload{border:1px dashed #80613d;background:#211b14;padding:28px;display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin-top:25px}
+.gallery-editor-upload strong{font:500 28px 'Cormorant Garamond',Georgia,serif}
+.gallery-editor-upload>span{font-size:12px;color:#b5a18a}
+.gallery-editor-publish{display:flex;align-items:center;gap:9px;color:#e2c89c;font-size:12px;margin:7px 0}
+.gallery-editor-publish input{accent-color:#cba46b}
+.gallery-upload-button{margin-top:0}
+.gallery-editor-list{display:grid;gap:16px;margin-top:26px}
+.gallery-editor-photo{display:grid;grid-template-columns:minmax(160px,230px) 1fr;gap:18px;background:#211b14;border:1px solid #57462f;padding:16px}
+.gallery-editor-photo>img{width:100%;height:190px;object-fit:cover;background:#0d0b09}
+.gallery-editor-fields{min-width:0;display:flex;flex-direction:column;gap:12px}
+.gallery-editor-pos{font-size:10px;letter-spacing:1.8px;color:#be9e6d}
+.gallery-editor-fields>label{font-size:12px;color:#b9a78e;display:grid;gap:7px}
+.gallery-editor-fields input[type="text"]{background:#0e0c09;border:1px solid #675036;color:#f4e9d8;padding:12px;min-width:0;width:100%;font:inherit}
+.gallery-editor-buttons{display:flex;gap:8px;flex-wrap:wrap}
+.admin-app .gallery-editor-buttons button{padding:10px 11px;font-size:11px}
+.admin-app .gallery-editor-buttons .gallery-editor-remove{border-color:#985d54;color:#ffc2b5}
+.gallery-editor-public,.gallery-editor-draft{font-size:10px;letter-spacing:1.4px;color:#c7b482}
+.gallery-editor-draft{color:#9a8c7d}
+@media(max-width:760px){.admin-gallery-header{flex-direction:column}.gallery-editor-photo{grid-template-columns:1fr}.gallery-editor-photo>img{height:230px}.gallery-editor-upload{padding:20px}}
