@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { ArrowRight, ArrowLeft, ArrowDown, LockKeyhole, Award, Menu, X, Shield, Film, Image as ImageIcon, Crown } from 'lucide-react';
 import './styles.css';
 import Admin from './Admin';
+import YearGallery from './YearGallery';
 import { supabase } from './supabase';
 
 const EXTRA_SLUGS = ['guante-de-mickey','cachorro-del-ano'];
@@ -71,6 +72,7 @@ function App(){
    </div>
    <div className="opening-bottom"><span>✦ NO TODO ES MÚSICA ✦</span><a href="#nominados">DESCUBRE LA GALA <ArrowDown size={15}/></a><span>SANTA CECILIA · 2026</span></div>
   </section>
+  <YearGallery/>
   <section id="nominados" className="nominees-section category-hub">
    <div className="section-topline"><span>01 / LAS CATEGORÍAS</span><span>SANTA CECILIA AWARDS 2026</span></div>
    {!active ? <>
