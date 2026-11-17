@@ -1,0 +1,23 @@
+
+.year-recap{background:#100e0b;padding:90px max(6%,calc((100vw - 1260px)/2)) 70px;overflow:hidden}
+.year-recap-head{display:flex;justify-content:space-between;gap:30px;align-items:flex-end;margin-bottom:38px}
+.year-recap-head h2{font:500 clamp(53px,6.7vw,93px)/.96 'Cormorant Garamond',Georgia,serif;letter-spacing:-1px;margin:20px 0;color:#f2e7d5}
+.year-recap-head h2 em{font-weight:400;color:#d6b377}
+.year-recap-head p{color:#b6a58f;line-height:1.8;font-size:14px;max-width:600px}
+.year-recap-buttons{display:flex;gap:10px;padding-bottom:10px}
+.year-recap-buttons button{width:46px;height:46px;background:#201a13;border:1px solid #80613b;color:#e7c18a;display:grid;place-items:center;cursor:pointer}
+.year-recap-buttons button:hover{background:#44311d}
+.year-recap-track{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:2px;scrollbar-width:thin;scrollbar-color:#987343 #18130e;padding-bottom:15px;overscroll-behavior-x:contain}
+.year-recap-track:focus-visible{outline:2px solid #caa56d;outline-offset:3px}
+.year-recap-slide{margin:0;position:relative;flex:0 0 min(390px,72vw);height:340px;scroll-snap-align:start;overflow:hidden;background:#2a2118;border:1px solid #644b2e}
+.year-recap-slide img{width:100%;height:100%;object-fit:cover;display:block}
+.year-recap-slide:after{content:'';pointer-events:none;position:absolute;inset:55% 0 0;background:linear-gradient(transparent,#060504aa)}
+.year-recap-slide figcaption{position:absolute;z-index:1;bottom:22px;left:18px;right:18px;color:#f8eddb;font-size:14px;font-weight:600;text-shadow:0 2px 5px #000}
+.year-recap-number{position:absolute;z-index:1;right:12px;top:12px;background:#0b0908ba;padding:8px 10px;font-size:10px;letter-spacing:1.5px;color:#e5c28c}
+.year-recap-bottom{display:flex;justify-content:space-between;gap:14px;font-size:10px;letter-spacing:1.6px;color:#a99270;margin-top:17px}
+.year-recap-bottom span{display:flex;align-items:center;gap:8px}
+.year-recap-empty{min-height:230px;padding:35px 20px;border:1px solid #544028;background:linear-gradient(145deg,#251c13,#14110d);color:#c2a678;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:15px}
+.year-recap-empty strong{font:500 29px 'Cormorant Garamond',Georgia,serif;color:#e9d5b7}
+.year-recap-empty span{font-size:12px;color:#ad9b84}
+@media(max-width:790px){.year-recap{padding:70px 20px 50px}.year-recap-slide{height:285px;flex-basis:min(330px,79vw)}.year-recap-head h2{font-size:61px}}
+@media(max-width:490px){.year-recap-head{flex-direction:column;align-items:flex-start}.year-recap-buttons{align-self:flex-end}.year-recap-slide{height:255px;flex-basis:82vw}.year-recap-bottom{flex-wrap:wrap}.year-recap-head h2{font-size:55px}}
