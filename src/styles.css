@@ -92,3 +92,11 @@
 @media(max-width:1100px){.nominee-detail-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:790px){.award-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.nominee-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.finale-puppy .award-photo,.finale-glove .award-photo{min-height:440px}.finale-intro{padding:50px 0 32px}.finale-reveal{padding:65px 0 45px}.opening:not(.with-photo) .opening-body{padding:90px 18px 120px}}
 @media(max-width:490px){.award-category-grid{grid-template-columns:1fr;gap:12px}.award-category-link{min-height:195px;padding:22px}.award-category-link strong{font-size:38px;margin:20px 0 10px}.nominee-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.nominee-detail-info{padding:14px}.nominee-detail-info h3{font-size:25px}.no-nominee-image{text-align:center;font-size:8px}.finale-puppy .award-photo,.finale-glove .award-photo{min-height:410px}.finale-intro h2{font-size:60px}.opening:not(.with-photo) .opening-body h1{font-size:clamp(60px,16vw,84px)}}
+
+/* Nominados: composición vertical para retratos de móvil */
+.nominee-detail-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.nominee-detail-media{aspect-ratio:3/4;background:#17120e}
+.nominee-detail-media img,.nominee-detail-media video{width:100%;height:100%;object-fit:contain;display:block;background:#17120e}
+.nominee-detail-media video{object-fit:contain}
+@media(max-width:1100px){.nominee-detail-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:790px){.nominee-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
