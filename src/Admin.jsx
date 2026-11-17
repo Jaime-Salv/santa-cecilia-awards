@@ -2,6 +2,7 @@ import React from 'react';
 import { supabase } from './supabase';
 import { LockKeyhole, LogOut, RefreshCw, Eye, EyeOff, ChartNoAxesColumn, ShieldCheck, ArrowLeft } from 'lucide-react';
 import './admin.css';
+import YearGalleryAdmin from './YearGalleryAdmin';
 
 const zero = {total_votes:0,total_participants:0,award_count:0};
 export default function Admin(){
@@ -128,6 +129,7 @@ export default function Admin(){
  <div className="admin-panels"><section className="admin-panel"><span className="admin-eyebrow">CONTROL DE LA GALA</span><h2>Votaciones</h2><p>Abre o cierra la recepción de votos cuando lo decida la organización.</p><div className="admin-setting"><div><b>{settings.voting_open?'Votaciones abiertas':'Votaciones cerradas'}</b><small>{settings.voting_open?'La base de datos permite recibir votos válidos.':'No se aceptan votos actualmente.'}</small></div><button disabled={busy} className={settings.voting_open?'admin-danger':'admin-primary'} onClick={()=>{if(window.confirm(settings.voting_open?'¿Cerrar las votaciones?':'¿Abrir las votaciones? Confirma que el sistema de votación pública ya está preparado.'))changeSetting('voting_open',!settings.voting_open)}}>{settings.voting_open?'Cerrar votación':'Abrir votación'}</button></div><div className="admin-notice"><LockKeyhole size={17}/> La interfaz para emitir votos anónimos está pendiente de implementación. Mantén las votaciones cerradas hasta probarla.</div></section>
  <section className="admin-panel"><span className="admin-eyebrow">PUBLICACIÓN DE RESULTADOS</span><h2>Ganadores</h2><p>Los resultados solo se mostrarán públicamente tras completar la pantalla de revelación de la gala.</p><div className="admin-setting"><div><b>{settings.results_published?'Revelación autorizada':'Resultados ocultos'}</b><small>Este control no afecta a las consultas privadas del panel.</small></div><button disabled={busy} onClick={()=>{if(window.confirm('¿Cambiar el permiso de publicación de resultados?'))changeSetting('results_published',!settings.results_published)}}>{settings.results_published?'Ocultar resultados':'Autorizar revelación'}</button></div></section></div>
 
+ <YearGalleryAdmin/>
  <section className="admin-panel admin-photos">
    <span className="admin-eyebrow">IMÁGENES OFICIALES</span>
    <h2>Fotografías de los premios</h2>
