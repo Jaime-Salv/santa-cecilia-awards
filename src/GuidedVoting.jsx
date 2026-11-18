@@ -20,6 +20,7 @@ export default function GuidedVoting(){
  const [selected,setSelected]=React.useState(null);
  const [working,setWorking]=React.useState(false);
  const [loading,setLoading]=React.useState(true);
+ const [rehearsalAllowed,setRehearsalAllowed]=React.useState(false);
  const [error,setError]=React.useState('');
  const modeRef=React.useRef(null);
 
@@ -31,11 +32,19 @@ export default function GuidedVoting(){
    const active=state.gala_mode==='live'||state.gala_mode==='rehearsal';
    if(active&&modeRef.current!==state.gala_mode){setStep(1);setSelected(null);setMyVotes({});modeRef.current=state.gala_mode}
    if(!active){modeRef.current=null;setAwards([]);setLoading(false);return}
+   const rehearsalCode=(new URLSearchParams(window.location.search)).get('ensayo');
+   const access=rehearsalCode && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rehearsalCode) ? rehearsalCode : null;
+   if(state.gala_mode==='rehearsal'){
+     if(!access){setRehearsalAllowed(false);setAwards([]);setLoading(false);return}
+     const validation=await supabase.rpc('sca_gala_validate_rehearsal',{p_access:access});
+     if(validation.error||validation.data!==true){setRehearsalAllowed(false);setAwards([]);setLoading(false);return}
+     setRehearsalAllowed(true);
+   }else setRehearsalAllowed(false);
    const token=tokenFor(state.gala_mode);
    if(!token){setError('Tu navegador no permite conservar un identificador local para el voto. Activa el almacenamiento del sitio.');setLoading(false);return}
    const [options,votes]=await Promise.all([
-     supabase.rpc('sca_gala_ballot_options'),
-     supabase.rpc('sca_gala_my_votes',{p_token:token})
+     supabase.rpc('sca_gala_ballot_options',{p_access:access}),
+     supabase.rpc('sca_gala_my_votes',{p_token:token,p_access:access})
    ]);
    if(options.error||votes.error){
      setError('No se pueden cargar las nominaciones de votación: '+(options.error||votes.error).message);
@@ -72,7 +81,7 @@ export default function GuidedVoting(){
    if(!window.confirm('¿Confirmas tu voto? No podrás cambiarlo después.'))return;
    setWorking(true);setError('');
    const {data,error:voteError}=await supabase.rpc('sca_gala_submit_vote',{
-     p_token:tokenFor(settings.gala_mode),p_award:current.id,p_nominee:selected
+     p_token:tokenFor(settings.gala_mode),p_award:current.id,p_nominee:selected,p_access:(new URLSearchParams(window.location.search)).get('ensayo')||null
    });
    if(voteError)setError(voteError.message);
    else if(data!==true)setError('Este navegador ya tiene un voto para este premio. Se mantiene el primero.');
@@ -89,6 +98,13 @@ export default function GuidedVoting(){
    <h3>La gala ha terminado</h3>
    <p>{settings.results_published?'Ya puedes descubrir las fotografías y resultados de todos los premios en «Los protagonistas de la gala».':'La organización anunciará los resultados cuando llegue el momento.'}</p>
    <a className="guided-voting-link" href="#nominados">{settings.results_published?'VER RESULTADOS':'VOLVER A LAS CATEGORÍAS'} <ArrowRight size={16}/></a>
+ </div>;
+
+ if(settings.gala_mode==='rehearsal'&&!rehearsalAllowed)return <div className="guided-voting-main">
+   <LockKeyhole size={35} color="#d7b77c"/>
+   <h3>Simulacro privado de la comisión</h3>
+   <p>Esta prueba solo se puede abrir con el enlace específico generado en administración. La web pública mantiene los nominados bloqueados.</p>
+   <span className="guided-voting-status">ACCESO RESERVADO</span>
  </div>;
 
  if(!isActive)return <div className="guided-voting-main">
