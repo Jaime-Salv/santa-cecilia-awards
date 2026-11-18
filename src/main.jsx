@@ -28,19 +28,22 @@ function App(){
  const [loading,setLoading]=React.useState(true);
  const [gala,setGala]=React.useState({gala_mode:'inactive',voting_open:false,results_published:false,unlocked_order:0});
  const [publishedCounts,setPublishedCounts]=React.useState({});
+ const [directorWinner,setDirectorWinner]=React.useState(null);
  React.useEffect(()=>{
   let active=true;
   async function load(){
-   const [awards,nominees,settings,results]=await Promise.all([
+   const [awards,nominees,settings,results,director]=await Promise.all([
     supabase.from('sca_awards').select('id,title,description,slug,image_url,display_order').order('display_order'),
     supabase.from('sca_nominees').select('id,award_id,name,description,photo_url,video_url').order('display_order'),
     supabase.from('sca_settings').select('voting_open,gala_mode,results_published,unlocked_order').eq('id',1).maybeSingle(),
-    supabase.rpc('sca_gala_public_results')
+    supabase.rpc('sca_gala_public_results'),
+    supabase.from('sca_director_award').select('winner_name,photo_url').eq('id',1).maybeSingle()
    ]);
    if(!active)return;
    if(!awards.error)setCategories((awards.data||[]).map(a=>({...a,nominees:(nominees.data||[]).filter(n=>n.award_id===a.id)})));
    if(!settings.error&&settings.data)setGala(settings.data);
    if(!results.error){const map={};(results.data||[]).forEach(r=>map[r.nominee_id]=Number(r.vote_count));setPublishedCounts(map)}
+   if(!director.error)setDirectorWinner(director.data||null);
    setLoading(false);
   }
   load();const interval=setInterval(load,6500);return()=>{active=false;clearInterval(interval)};
@@ -50,6 +53,8 @@ function App(){
  const puppy=categories.find(c=>c.slug===PUPPY);
  const active=regular.find(c=>c.slug===selected);
  const reveal=gala.gala_mode==='finished'&&gala.results_published;
+ function winnersFor(category){if(!category?.nominees?.length)return [];const top=Math.max(...category.nominees.map(n=>publishedCounts[n.id]||0));return top>0?category.nominees.filter(n=>(publishedCounts[n.id]||0)===top):[]}
+ const puppyWinners=winnersFor(puppy);
  function openCategory(slug){setSelected(slug);window.requestAnimationFrame(()=>document.getElementById('nominados')?.scrollIntoView({behavior:'smooth'}));}
  function backToList(){setSelected(null);window.requestAnimationFrame(()=>document.getElementById('nominados')?.scrollIntoView({behavior:'smooth'}));}
  return <>
@@ -85,21 +90,21 @@ function App(){
     {loading ? <div className="nominees-empty">Cargando categorías…</div> : regular.length ? <div className="award-category-grid">{regular.map((c,i)=>
      <button type="button" className="award-category-link" onClick={()=>openCategory(c.slug)} key={c.id}>
       <span className="category-top"><span>PREMIO {String(i+1).padStart(2,'0')}</span><Award size={19} strokeWidth={1.3}/></span>
-      <strong>{c.title}</strong><span className="category-excerpt">{c.description||'Santa Cecilia Awards 2026'}</span>
-      <span className="category-foot">VER NOMINADOS <ArrowRight size={17}/></span>
+      <strong>{c.title}</strong><span className="category-excerpt">{c.description||'Santa Cecilia Awards 2026'}</span>{reveal&&winnersFor(c).length>0&&<span className="category-winner-line">✦ {winnersFor(c).length>1?'EMPATE: ':'GANADOR: '}{winnersFor(c).map(n=>n.name).join(' · ')}</span>}
+      <span className="category-foot">{reveal?'VER RESULTADOS':'VER CATEGORÍA'} <ArrowRight size={17}/></span>
      </button>
     )}</div> : <div className="nominees-empty">Las categorías se anunciarán próximamente.</div>}
    </> : <>
     <button className="back-categories" onClick={backToList}><ArrowLeft size={16}/> TODAS LAS CATEGORÍAS</button>
     <div className="nominee-detail-intro"><span className="eyebrow gold-text">SANTA CECILIA AWARDS · NOMINACIONES</span><h2>{active.title}</h2>{active.description&&<p>{active.description}</p>}</div>
     {!reveal ? <div className="nominees-empty nominees-secret"><LockKeyhole size={29}/><strong>Nominados ocultos hasta la revelación</strong><span>La organización los anunciará durante el proceso de votación, premio por premio y sin fotografías. Las fotos y los vídeos se mostrarán cuando se publiquen los resultados finales.</span><a href="#votacion" className="inline-link">IR A LA VOTACIÓN <ArrowRight size={15}/></a></div>
-    : active.nominees.length ? <div className="nominee-detail-grid">{active.nominees.map((n,i)=><article className="nominee-detail-card" key={n.id}>
+    : active.nominees.length ? <><div className="nominee-results-head">{winnersFor(active).length>0?<><Award size={21}/><strong>{winnersFor(active).length>1?'EMPATE EN PRIMER LUGAR':'GANADOR DEL PREMIO'}</strong><span>{winnersFor(active).map(n=>n.name).join(' · ')}</span></>:<><Award size={21}/><span>Este premio no recibió votos.</span></>}</div><div className="nominee-detail-grid">{active.nominees.map((n,i)=><article className={'nominee-detail-card'+(winnersFor(active).some(w=>w.id===n.id)?' is-category-winner':'')} key={n.id}>
       <div className="nominee-detail-media">{n.photo_url?<img src={n.photo_url} alt={'Fotografía de '+n.name} loading="lazy"/>:n.video_url&&n.video_url.toLowerCase().split('?')[0].endsWith('.mp4')?<video src={n.video_url} controls playsInline preload="metadata" aria-label={'Vídeo de '+n.name}/>:<div className="no-nominee-image"><ImageIcon size={27} strokeWidth={1}/><span>FOTOGRAFÍA PENDIENTE</span></div>}</div>
-      <div className="nominee-detail-info"><span>NOMINADO {String(i+1).padStart(2,'0')}</span><h3>{n.name}</h3>{n.description&&<p>{n.description}</p>}
+      <div className="nominee-detail-info"><span>{winnersFor(active).some(w=>w.id===n.id)?'★ GANADOR ★':'NOMINADO '+String(i+1).padStart(2,'0')}</span><h3>{n.name}</h3>{n.description&&<p>{n.description}</p>}
         <div className="nominee-final-votes">{publishedCounts[n.id]||0} votos</div>
         {n.video_url&&(n.video_url.toLowerCase().split('?')[0].endsWith('.mp4')?n.photo_url?<div className="nominee-extra-video"><span><Film size={14}/> VÍDEO DEL NOMINADO</span><video src={n.video_url} controls playsInline preload="metadata"/></div>:null:<a href={n.video_url} target="_blank" rel="noopener noreferrer"><Film size={15}/> VER VÍDEO DEL MOMENTO <ArrowRight size={14}/></a>)}
       </div>
-     </article>)}</div> : <div className="nominees-empty"><Award size={25}/><strong>Sin nominados disponibles</strong><span>Consulta de nuevo más tarde.</span></div>}
+     </article>)}</div></> : <div className="nominees-empty"><Award size={25}/><strong>Sin nominados disponibles</strong><span>Consulta de nuevo más tarde.</span></div>}
     <button className="back-categories bottom" onClick={backToList}><ArrowLeft size={16}/> VOLVER A LOS PREMIOS</button>
    </>}
   </section>
@@ -107,13 +112,13 @@ function App(){
    <div className="section-topline"><span>02 / LOS GRANDES PREMIOS</span><span>EL MOMENTO MÁS ESPERADO</span></div>
    <div className="finale-intro"><span className="eyebrow gold-text">Y PARA TERMINAR…</span><h2>Lo mejor se guarda<br/><em>para el final.</em></h2><p>Dos galardones especiales. Dos momentos únicos. Solo ellos tienen trofeo propio.</p></div>
    <article className="second-prize finale-puppy">
-    <div className="second-copy"><span className="eyebrow gold-text">SEGUNDO GRAN GALARDÓN</span><span className="prize-index">EL RECONOCIMIENTO A LOS CACHORROS</span><h3>Cachorro<br/><em>del Año.</em></h3><p>El premio a las nuevas generaciones de nuestra banda. Uno de los grandes protagonistas de la noche.</p><span className="prize-meta">EL GALARDÓN DORADO</span></div>
+    <div className="second-copy"><span className="eyebrow gold-text">SEGUNDO GRAN GALARDÓN</span><span className="prize-index">EL RECONOCIMIENTO A LOS CACHORROS</span><h3>Cachorro<br/><em>del Año.</em></h3><p>El premio a las nuevas generaciones de nuestra banda. Uno de los grandes protagonistas de la noche.</p><span className="prize-meta">EL GALARDÓN DORADO</span>{reveal&&<div className="finale-winner-callout">{puppyWinners.length?<><span>{puppyWinners.length>1?'EMPATE · GANADORES':'GANADOR 2026'}</span><strong>{puppyWinners.map(n=>n.name).join(' · ')}</strong><small>{publishedCounts[puppyWinners[0].id]} votos</small></>:<span>Sin votos registrados</span>}</div>}</div>
     <TrophyPhoto award={puppy} slug={PUPPY} alt="Trofeo dorado del Cachorro del Año con el escudo de la banda" fallback="♛"/>
    </article>
    <div className="finale-reveal"><span>Y EL GRAN PREMIO DE LA NOCHE…</span><div className="finale-rule">✦</div></div>
    <article className="featured-prize finale-glove">
     <TrophyPhoto award={glove} slug={MAIN_GLOVE} alt="Guante de Mickey blanco firmado sobre pedestal negro" fallback="✋"/>
-    <div className="prize-copy"><span className="eyebrow gold-text">EL GALARDÓN MÁS CODICIADO</span><span className="prize-index">GRAN PREMIO · ELECCIÓN DEL DIRECTOR</span><h3>El Guante<br/><em>de Mickey.</em></h3><p>El director elige al ganador entre <strong>cualquier músico de la banda</strong>. No hay lista de nominados ni votación popular para este galardón.</p><div className="prize-divider"/><span className="prize-meta">UN SOLO ELEGIDO. UNA DECISIÓN DEL DIRECTOR.</span></div>
+    <div className="prize-copy"><span className="eyebrow gold-text">EL GALARDÓN MÁS CODICIADO</span><span className="prize-index">GRAN PREMIO · ELECCIÓN DEL DIRECTOR</span><h3>El Guante<br/><em>de Mickey.</em></h3><p>El director elige al ganador entre <strong>cualquier músico de la banda</strong>. No hay lista de nominados ni votación popular para este galardón.</p><div className="prize-divider"/><span className="prize-meta">UN SOLO ELEGIDO. UNA DECISIÓN DEL DIRECTOR.</span>{reveal&&<div className="finale-winner-callout"><span>GANADOR ELEGIDO POR EL DIRECTOR</span>{directorWinner?<><strong>{directorWinner.winner_name}</strong>{directorWinner.photo_url&&<img className="director-winning-photo" src={directorWinner.photo_url} alt={'Ganador del Guante de Mickey: '+directorWinner.winner_name}/>}</>:<strong>Pendiente de registrar</strong>}</div>}</div>
    </article>
   </section>
   <section id="votacion" className="voting-section">
