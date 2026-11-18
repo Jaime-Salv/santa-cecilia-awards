@@ -11,6 +11,7 @@ export default function EditionsAdmin(){
  const [newYear,setNewYear]=React.useState('2027');
  const [newTitle,setNewTitle]=React.useState('Santa Cecilia Awards 2027');
  const [awardName,setAwardName]=React.useState('');
+ const [editionTitle,setEditionTitle]=React.useState('');
  const [awardType,setAwardType]=React.useState('public');
  const [newNominees,setNewNominees]=React.useState({});
  const [saving,setSaving]=React.useState(false);
@@ -29,6 +30,7 @@ export default function EditionsAdmin(){
  React.useEffect(()=>{load()},[load]);
  const edition=editions.find(e=>e.id===selected);
  const draft=edition?.status==='draft';
+ React.useEffect(()=>setEditionTitle(edition?.title||''),[edition?.id,edition?.title]);
  const editionAwards=awards.filter(a=>a.edition_id===selected);
  async function perform(operation,ok){
   setSaving(true);setError('');setMessage('');
@@ -48,7 +50,7 @@ export default function EditionsAdmin(){
  }
  async function saveEdition(){
   if(!draft)return;
-  await perform(async()=>{const {error}=await supabase.from('sca_editions').update({title:edition.title}).eq('id',edition.id);fail(error)},'Nombre de la edición guardado.');
+  await perform(async()=>{const {error}=await supabase.from('sca_editions').update({title:editionTitle.trim()}).eq('id',edition.id);fail(error)},'Nombre de la edición guardado.');
  }
  async function createAward(e){
   e.preventDefault();
@@ -116,6 +118,7 @@ export default function EditionsAdmin(){
       </div>:
       <>
        <p className="ed-limits">Esta edición está en <strong>borrador editable</strong>. Puedes crear, editar y borrar premios y nominados. La votación activa sigue siendo la de 2026: poner en marcha el motor de votación para una nueva edición requiere una activación específica, que todavía no está implementada.</p>
+       {draft&&<div className="ed-edit-title"><label>Nombre de la edición<input value={editionTitle} maxLength={160} onChange={e=>setEditionTitle(e.target.value)}/></label><button disabled={saving||!editionTitle.trim()} type="button" onClick={saveEdition}><Save size={15}/> Guardar nombre</button></div>}
        {draft&&<form className="ed-create-award" onSubmit={createAward}><strong>Nuevo premio</strong><input value={awardName} onChange={e=>setAwardName(e.target.value)} placeholder="Nombre del premio" maxLength={180} required/><select value={awardType} onChange={e=>setAwardType(e.target.value)}><option value="public">Votación popular</option><option value="director">Elección del director</option></select><button disabled={saving} type="submit"><Plus size={15}/> Añadir premio</button></form>}
        <div className="ed-awards">{editionAwards.map(a=><EditionAward key={a.id} award={a} nominees={nominees.filter(n=>n.award_id===a.id)} disabled={!draft||saving} onSave={changes=>saveAward(a,changes)} onDelete={()=>deleteAward(a)} onAdd={e=>addNominee(e,a)} newNominee={newNominees[a.id]||''} setNewNominee={v=>setNewNominees(m=>({...m,[a.id]:v}))} onEditNominee={editNominee} onDeleteNominee={deleteNominee} onPhoto={uploadPhoto}/>)}</div>
        {!editionAwards.length&&<p className="ed-no-awards">Todavía no hay premios para esta edición. Añade el primero con el formulario.</p>}
@@ -129,10 +132,11 @@ function EditionAward({award:a,nominees,disabled,onSave,onDelete,onAdd,newNomine
  const [title,setTitle]=React.useState(a.title);
  const [description,setDescription]=React.useState(a.description||'');
  const [kind,setKind]=React.useState(a.award_type);
- React.useEffect(()=>{setTitle(a.title);setDescription(a.description||'');setKind(a.award_type)},[a.title,a.description,a.award_type]);
+ const [order,setOrder]=React.useState(a.display_order);
+ React.useEffect(()=>{setTitle(a.title);setDescription(a.description||'');setKind(a.award_type);setOrder(a.display_order)},[a.title,a.description,a.award_type,a.display_order]);
  return <details className="ed-award" open={false}><summary><Trophy size={19}/><span>{a.title}</span><small>{a.award_type==='director'?'DIRECTOR':'VOTO POPULAR'} · {nominees.length} nominados</small></summary>
   <div className="ed-award-content">
-    <div className="ed-award-fields"><label>Nombre<input value={title} disabled={disabled} onChange={e=>setTitle(e.target.value)} maxLength={180}/></label><label>Descripción<textarea rows={2} value={description} disabled={disabled} onChange={e=>setDescription(e.target.value)}/></label><label>Tipo de elección<select disabled={disabled} value={kind} onChange={e=>setKind(e.target.value)}><option value="public">Voto popular</option><option value="director">Elección del director</option></select></label><button type="button" disabled={disabled||!title.trim()} onClick={()=>onSave({title:title.trim(),description,award_type:kind})}><Save size={15}/> Guardar premio</button><button className="ed-danger" type="button" disabled={disabled} onClick={onDelete}><Trash2 size={15}/> Eliminar premio</button></div>
+    <div className="ed-award-fields"><label>Nombre<input value={title} disabled={disabled} onChange={e=>setTitle(e.target.value)} maxLength={180}/></label><label>Descripción<textarea rows={2} value={description} disabled={disabled} onChange={e=>setDescription(e.target.value)}/></label><label>Orden de aparición<input type="number" min="1" value={order} disabled={disabled} onChange={e=>setOrder(Number(e.target.value))}/></label><label>Tipo de elección<select disabled={disabled} value={kind} onChange={e=>setKind(e.target.value)}><option value="public">Voto popular</option><option value="director">Elección del director</option></select></label><button type="button" disabled={disabled||!title.trim()} onClick={()=>onSave({title:title.trim(),description,award_type:kind,display_order:order})}><Save size={15}/> Guardar premio</button><button className="ed-danger" type="button" disabled={disabled} onClick={onDelete}><Trash2 size={15}/> Eliminar premio</button></div>
     {kind==='director'&&<p className="ed-note">Elección del director: no requiere nominados. El ganador se registrará en la gala correspondiente.</p>}
     {nominees.map(n=><EditionNominee key={n.id} item={n} disabled={disabled} onSave={changes=>onEditNominee(n,changes)} onDelete={()=>onDeleteNominee(n)} onPhoto={file=>onPhoto(n,file)}/>)}
     {kind==='public'&&!disabled&&<form onSubmit={onAdd} className="ed-add-nominee"><input value={newNominee} placeholder="Nombre del nuevo nominado" required maxLength={180} onChange={e=>setNewNominee(e.target.value)}/><button type="submit"><Plus size={15}/> Añadir nominado</button></form>}
