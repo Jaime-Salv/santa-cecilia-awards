@@ -28,3 +28,5 @@
 .admin-video-label{display:grid;gap:6px;font-size:10px;color:#a99780;width:100%;max-width:380px}
 .admin-video-label input{border:1px solid #53442d;background:#0a0908;color:#f6e8d0;padding:10px;font:inherit;width:100%}
 @media(max-width:620px){.admin-nominee-item{align-items:flex-start}.admin-nominee-item>button{margin-left:auto}.admin-nominee-group summary span{font-size:23px}}
+
+.admin-subnav{display:flex;gap:10px;flex-wrap:wrap;border-bottom:1px solid #624c32;padding:9px 0 19px;margin-top:25px}.admin-subnav button{background:#1e1913;color:#d2b38b;border:1px solid #725a39;padding:14px 23px;font-weight:750;font-size:13px}.admin-subnav button.selected{background:#d1b07a;color:#19120c;border-color:#d1b07a}
