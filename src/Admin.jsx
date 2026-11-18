@@ -4,6 +4,7 @@ import { LockKeyhole, LogOut, RefreshCw, Eye, EyeOff, ChartNoAxesColumn, ShieldC
 import './admin.css';
 import YearGalleryAdmin from './YearGalleryAdmin';
 import NomineeMediaAdmin from './NomineeMediaAdmin';
+import GalaAdminControls from './GalaAdminControls';
 
 const zero = {total_votes:0,total_participants:0,award_count:0};
 export default function Admin(){
@@ -15,13 +16,10 @@ export default function Admin(){
  const [error,setError]=React.useState('');
  const [busy,setBusy]=React.useState(false);
  const [settings,setSettings]=React.useState({voting_open:false,results_published:false});
- const [summary,setSummary]=React.useState(zero);
- const [results,setResults]=React.useState([]);
  const [awards,setAwards]=React.useState([]);
  const [nominees,setNominees]=React.useState([]);
  const [photoUploading,setPhotoUploading]=React.useState(null);
  const [photoStatus,setPhotoStatus]=React.useState('');
- const [showResults,setShowResults]=React.useState(false);
  React.useEffect(()=>{
    supabase.auth.getSession().then(({data})=>{setSession(data.session);setChecked(true)});
    const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,s)=>{setSession(s);setAuthorized(false);});
@@ -37,17 +35,11 @@ export default function Admin(){
  },[session?.user?.id]);
  const refresh=React.useCallback(async()=>{
    if(!authorized)return;
-   const [s,m,r,a,n]=await Promise.all([
-     supabase.from('sca_settings').select('voting_open,results_published').eq('id',1).single(),
-     supabase.rpc('sca_admin_vote_summary'),
-     supabase.rpc('sca_admin_vote_results'),
+   const [a,n]=await Promise.all([
      supabase.from('sca_awards').select('id,title,slug,image_url,published').order('display_order'),
      supabase.from('sca_nominees').select('id,award_id,name,photo_url,video_url,published,display_order').order('display_order')
    ]);
-   if(s.error||m.error||r.error||a.error||n.error){setError('No se pudieron cargar todos los datos: '+(s.error||m.error||r.error||a.error||n.error).message);return}
-   setSettings(s.data);
-   setSummary(m.data?.[0]||zero);
-   setResults(r.data||[]);
+   if(a.error||n.error){setError('No se pudieron cargar los premios y nominados: '+(a.error||n.error).message);return}
    setAwards(a.data||[]);
    setNominees(n.data||[]);
    setError('');
@@ -124,24 +116,16 @@ export default function Admin(){
   finally{setPhotoUploading(null)}
  }
 
- const totals=results.reduce((o,r)=>({...o,[r.award_id]:(o[r.award_id]||0)+Number(r.vote_count)}),{});
- const categories=Object.values(results.reduce((acc,r)=>{
-   if(!acc[r.award_id])acc[r.award_id]={id:r.award_id,title:r.award_title,nominees:[]};
-   acc[r.award_id].nominees.push(r);return acc;
- },{}));
  return <div className="admin-app"><header className="admin-header"><a href="/" className="admin-brand">SC <span>✦</span> AWARDS <small>ADMINISTRACIÓN</small></a><a href="/" className="admin-back"><ArrowLeft size={15}/> Volver a la web</a></header>
  {!checked?<div className="admin-center">Comprobando acceso…</div>:!session?<main className="admin-login"><LockKeyhole size={34} color="#c9aa75"/><span className="admin-eyebrow">ACCESO RESTRINGIDO</span><h1>Panel de administración</h1><p>Solo para la organización de Santa Cecilia Awards.</p><form onSubmit={signIn}><label>Correo del administrador<input type="email" required autoComplete="username" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Correo electrónico"/></label><label>Contraseña<input type="password" required autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Contraseña"/></label><button className="admin-primary" disabled={busy}>{busy?'Entrando…':'Acceder al panel'}</button></form>{error&&<p className="admin-error" role="alert">{error}</p>}</main>:!authorized?<main className="admin-login"><ShieldCheck size={36}/><h1>Acceso no autorizado</h1><p>Tu cuenta ha iniciado sesión, pero todavía no está registrada como administradora de la gala.</p><button className="admin-primary" onClick={()=>supabase.auth.signOut()}>Cerrar sesión</button></main>:<main className="admin-dashboard"><div className="admin-head"><div><span className="admin-eyebrow">SANTA CECILIA AWARDS · 2026</span><h1>Panel de control</h1><p>Gestión de votaciones y escrutinio privado.</p></div><div className="admin-actions"><button onClick={refresh}><RefreshCw size={16}/> Actualizar</button><button onClick={()=>supabase.auth.signOut()}><LogOut size={16}/> Salir</button></div></div>
  {error&&<p className="admin-error" role="alert">{error}</p>}
- <div className="admin-metrics"><article><span>Votos recibidos</span><strong>{summary.total_votes}</strong><small>Elecciones por categoría</small></article><article><span>Participación</span><strong>{summary.total_participants}</strong><small>Papeletas identificadas por el modelo actual</small></article><article><span>Categorías</span><strong>{summary.award_count}</strong><small>Premios registrados</small></article></div>
- <div className="admin-panels"><section className="admin-panel"><span className="admin-eyebrow">CONTROL DE LA GALA</span><h2>Votaciones</h2><p>Abre o cierra la recepción de votos cuando lo decida la organización.</p><div className="admin-setting"><div><b>{settings.voting_open?'Votaciones abiertas':'Votaciones cerradas'}</b><small>{settings.voting_open?'La base de datos permite recibir votos válidos.':'No se aceptan votos actualmente.'}</small></div><button disabled={busy} className={settings.voting_open?'admin-danger':'admin-primary'} onClick={()=>{if(window.confirm(settings.voting_open?'¿Cerrar las votaciones?':'¿Abrir las votaciones? Confirma que el sistema de votación pública ya está preparado.'))changeSetting('voting_open',!settings.voting_open)}}>{settings.voting_open?'Cerrar votación':'Abrir votación'}</button></div><div className="admin-notice"><LockKeyhole size={17}/> La interfaz para emitir votos anónimos está pendiente de implementación. Mantén las votaciones cerradas hasta probarla.</div></section>
- <section className="admin-panel"><span className="admin-eyebrow">PUBLICACIÓN DE RESULTADOS</span><h2>Ganadores</h2><p>Los resultados solo se mostrarán públicamente tras completar la pantalla de revelación de la gala.</p><div className="admin-setting"><div><b>{settings.results_published?'Revelación autorizada':'Resultados ocultos'}</b><small>Este control no afecta a las consultas privadas del panel.</small></div><button disabled={busy} onClick={()=>{if(window.confirm('¿Cambiar el permiso de publicación de resultados?'))changeSetting('results_published',!settings.results_published)}}>{settings.results_published?'Ocultar resultados':'Autorizar revelación'}</button></div></section></div>
-
+ <GalaAdminControls/>
  <YearGalleryAdmin/>
  <section className="admin-panel admin-photos">
    <span className="admin-eyebrow">IMÁGENES OFICIALES</span>
-   <h2>Fotografías de los premios</h2>
+   <h2>Fotografías de los grandes premios</h2>
    <p>Sube las fotos de los trofeos directamente desde aquí. La portada y las tarjetas de premios se actualizarán automáticamente. No necesitas modificar GitHub.</p>
-   <div className="admin-photo-grid">{awards.map(award=><article className="admin-photo-card" key={award.id}>
+   <div className="admin-photo-grid">{awards.filter(award=>['guante-de-mickey','cachorro-del-ano'].includes(award.slug)).map(award=><article className="admin-photo-card" key={award.id}>
      <div className="admin-photo-preview">{award.image_url?<img src={award.image_url} alt={award.title}/>:<span>Sin fotografía</span>}</div>
      <div className="admin-photo-content"><strong>{award.title}</strong><small>{award.image_url?'Imagen configurada':'Pendiente de imagen oficial'}</small>
        <label className="admin-photo-upload">{photoUploading===award.id?'Subiendo…':'Seleccionar fotografía'}
@@ -164,6 +148,5 @@ export default function Admin(){
      </article>)}</div>
    </details>)}</div>
  </section>
- <section className="admin-panel admin-results"><div className="admin-results-title"><div><span className="admin-eyebrow">ESCRUTINIO PRIVADO</span><h2>Resultados por premio</h2></div><button onClick={()=>setShowResults(v=>!v)}>{showResults?<EyeOff size={16}/>:<Eye size={16}/>} {showResults?'Ocultar cifras':'Ver cifras'}</button></div>{!showResults?<div className="admin-hidden"><EyeOff size={26}/> Los resultados están ocultos en pantalla. Pulsa «Ver cifras» para consultarlos.</div>:categories.length===0?<p>No hay candidatos registrados todavía.</p>:categories.map(c=><div className="admin-category" key={c.id}><h3>{c.title} <small>{totals[c.id]||0} votos</small></h3>{c.nominees.map(n=><div className="admin-vote" key={n.nominee_id}><div><span>{n.nominee_name}</span><b>{n.vote_count} votos · {totals[c.id]?Math.round(Number(n.vote_count)*100/totals[c.id]):0}%</b></div><div className="admin-bar"><div style={{width:(totals[c.id]?Number(n.vote_count)*100/totals[c.id]:0)+'%'}}/></div></div>)}</div>)}</section>
  </main>}</div>
 }
