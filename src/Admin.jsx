@@ -5,6 +5,7 @@ import './admin.css';
 import YearGalleryAdmin from './YearGalleryAdmin';
 import NomineeMediaAdmin from './NomineeMediaAdmin';
 import GalaAdminControls from './GalaAdminControls';
+import DirectorWinnerAdmin from './DirectorWinnerAdmin';
 
 const zero = {total_votes:0,total_participants:0,award_count:0};
 export default function Admin(){
@@ -112,6 +113,7 @@ export default function Admin(){
  {!checked?<div className="admin-center">Comprobando acceso…</div>:!session?<main className="admin-login"><LockKeyhole size={34} color="#c9aa75"/><span className="admin-eyebrow">ACCESO RESTRINGIDO</span><h1>Panel de administración</h1><p>Solo para la organización de Santa Cecilia Awards.</p><form onSubmit={signIn}><label>Correo del administrador<input type="email" required autoComplete="username" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Correo electrónico"/></label><label>Contraseña<input type="password" required autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Contraseña"/></label><button className="admin-primary" disabled={busy}>{busy?'Entrando…':'Acceder al panel'}</button></form>{error&&<p className="admin-error" role="alert">{error}</p>}</main>:!authorized?<main className="admin-login"><ShieldCheck size={36}/><h1>Acceso no autorizado</h1><p>Tu cuenta ha iniciado sesión, pero todavía no está registrada como administradora de la gala.</p><button className="admin-primary" onClick={()=>supabase.auth.signOut()}>Cerrar sesión</button></main>:<main className="admin-dashboard"><div className="admin-head"><div><span className="admin-eyebrow">SANTA CECILIA AWARDS · 2026</span><h1>Panel de control</h1><p>Gestión de votaciones y escrutinio privado.</p></div><div className="admin-actions"><button onClick={refresh}><RefreshCw size={16}/> Actualizar</button><button onClick={()=>supabase.auth.signOut()}><LogOut size={16}/> Salir</button></div></div>
  {error&&<p className="admin-error" role="alert">{error}</p>}
  <GalaAdminControls/>
+ <DirectorWinnerAdmin/>
  <YearGalleryAdmin/>
  <section className="admin-panel admin-photos">
    <span className="admin-eyebrow">IMÁGENES OFICIALES</span>
