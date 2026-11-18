@@ -6,12 +6,14 @@ import YearGalleryAdmin from './YearGalleryAdmin';
 import NomineeMediaAdmin from './NomineeMediaAdmin';
 import GalaAdminControls from './GalaAdminControls';
 import DirectorWinnerAdmin from './DirectorWinnerAdmin';
+import EditionsAdmin from './EditionsAdmin';
 
 const zero = {total_votes:0,total_participants:0,award_count:0};
 export default function Admin(){
  const [session,setSession]=React.useState(null);
  const [checked,setChecked]=React.useState(false);
  const [authorized,setAuthorized]=React.useState(false);
+ const [tab,setTab]=React.useState('gala');
  const [email,setEmail]=React.useState('');
  const [password,setPassword]=React.useState('');
  const [error,setError]=React.useState('');
@@ -112,6 +114,8 @@ export default function Admin(){
  return <div className="admin-app"><header className="admin-header"><a href="/" className="admin-brand">SC <span>✦</span> AWARDS <small>ADMINISTRACIÓN</small></a><a href="/" className="admin-back"><ArrowLeft size={15}/> Volver a la web</a></header>
  {!checked?<div className="admin-center">Comprobando acceso…</div>:!session?<main className="admin-login"><LockKeyhole size={34} color="#c9aa75"/><span className="admin-eyebrow">ACCESO RESTRINGIDO</span><h1>Panel de administración</h1><p>Solo para la organización de Santa Cecilia Awards.</p><form onSubmit={signIn}><label>Correo del administrador<input type="email" required autoComplete="username" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Correo electrónico"/></label><label>Contraseña<input type="password" required autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Contraseña"/></label><button className="admin-primary" disabled={busy}>{busy?'Entrando…':'Acceder al panel'}</button></form>{error&&<p className="admin-error" role="alert">{error}</p>}</main>:!authorized?<main className="admin-login"><ShieldCheck size={36}/><h1>Acceso no autorizado</h1><p>Tu cuenta ha iniciado sesión, pero todavía no está registrada como administradora de la gala.</p><button className="admin-primary" onClick={()=>supabase.auth.signOut()}>Cerrar sesión</button></main>:<main className="admin-dashboard"><div className="admin-head"><div><span className="admin-eyebrow">SANTA CECILIA AWARDS · 2026</span><h1>Panel de control</h1><p>Gestión de votaciones y escrutinio privado.</p></div><div className="admin-actions"><button onClick={refresh}><RefreshCw size={16}/> Actualizar</button><button onClick={()=>supabase.auth.signOut()}><LogOut size={16}/> Salir</button></div></div>
  {error&&<p className="admin-error" role="alert">{error}</p>}
+ <nav className="admin-subnav" aria-label="Secciones de administración"><button className={tab==='gala'?'selected':''} onClick={()=>setTab('gala')}>Gala actual</button><button className={tab==='editions'?'selected':''} onClick={()=>setTab('editions')}>Temporadas y premios</button></nav>
+ {tab==='editions'?<EditionsAdmin/>:<>
  <GalaAdminControls/>
  <DirectorWinnerAdmin/>
  <YearGalleryAdmin/>
@@ -141,5 +145,6 @@ export default function Admin(){
      </article>)}</div>
    </details>)}</div>
  </section>
+ </>}
  </main>}</div>
 }
