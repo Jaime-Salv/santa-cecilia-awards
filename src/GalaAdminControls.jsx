@@ -8,6 +8,7 @@ const modes={inactive:'Sin comenzar',rehearsal:'SIMULACRO',live:'GALA REAL',fini
 export default function GalaAdminControls(){
  const [awards,setAwards]=React.useState([]);
  const [settings,setSettings]=React.useState(null);
+ const [rehearsalInvite,setRehearsalInvite]=React.useState(null);
  const [tallies,setTallies]=React.useState({live:[],rehearsal:[]});
  const [modeView,setModeView]=React.useState('live');
  const [busy,setBusy]=React.useState(false);
@@ -15,15 +16,16 @@ export default function GalaAdminControls(){
  const [notice,setNotice]=React.useState('');
  const [showResults,setShowResults]=React.useState(false);
  const refresh=React.useCallback(async()=>{
-  const [s,a,l,r]=await Promise.all([
+  const [s,a,l,r,i]=await Promise.all([
    supabase.from('sca_settings').select('gala_mode,voting_open,unlocked_order,results_published').eq('id',1).single(),
    supabase.from('sca_awards').select('id,title,slug,voting_order').not('voting_order','is',null).order('voting_order'),
    supabase.rpc('sca_gala_admin_results',{p_mode:'live'}),
-   supabase.rpc('sca_gala_admin_results',{p_mode:'rehearsal'})
+   supabase.rpc('sca_gala_admin_results',{p_mode:'rehearsal'}),
+   supabase.from('sca_rehearsal_invite').select('access_token').eq('id',1).single()
   ]);
-  const e=s.error||a.error||l.error||r.error;
+  const e=s.error||a.error||l.error||r.error||i.error;
   if(e){setError('No se pudo cargar el control de gala: '+e.message);return}
-  setSettings(s.data);setAwards(a.data||[]);setTallies({live:l.data||[],rehearsal:r.data||[]});setError('');
+  setSettings(s.data);setAwards(a.data||[]);setTallies({live:l.data||[],rehearsal:r.data||[]});setRehearsalInvite(i.data?.access_token||null);setError('');
  },[]);
  React.useEffect(()=>{
   refresh();
@@ -40,15 +42,14 @@ export default function GalaAdminControls(){
   await refresh();setBusy(false);
  }
  async function startRehearsal(){
-   if(!window.confirm('¿Empezar un simulacro nuevo? Se borrarán los votos anteriores del simulacro; no se tocará ningún voto real.'))return;
+   if(!window.confirm('¿Empezar un simulacro nuevo? Se generará un enlace privado para la comisión y se limpiarán solo los votos de prueba.'))return;
    setBusy(true);setError('');setNotice('');
-   const cleared=await supabase.rpc('sca_gala_reset_rehearsal');
-   if(cleared.error){setError('No se pudo limpiar el simulacro: '+cleared.error.message);setBusy(false);return}
-   const {error:e}=await supabase.from('sca_settings').update({gala_mode:'rehearsal',voting_open:true,unlocked_order:0,results_published:false,updated_at:new Date().toISOString()}).eq('id',1);
+   const {error:e}=await supabase.rpc('sca_gala_prepare_rehearsal');
    if(e)setError('No se pudo iniciar el simulacro: '+e.message);
-   else setNotice('Simulacro nuevo preparado con cero votos. Ahora activa el primer premio.');
+   else{setNotice('Simulacro preparado. Copia el enlace de ensayo y compártelo únicamente con la comisión.');setModeView('rehearsal')}
    await refresh();setBusy(false);
  }
+
  async function resetTestVotes(){
   if(!window.confirm('¿Borrar TODOS los votos del simulacro? Los votos reales no se tocarán.'))return;
   setBusy(true);setError('');setNotice('');
@@ -84,7 +85,14 @@ export default function GalaAdminControls(){
     </>}
     {currentMode==='finished'&&<button disabled={busy} onClick={()=>change({results_published:!settings.results_published},'¿Cambiar la visibilidad pública de los resultados?')}>{settings.results_published?<><EyeOff size={17}/> Ocultar resultados públicos</>:<><Eye size={17}/> Mostrar resultados públicos</>}</button>}
    </div>
-   {currentMode==='rehearsal'&&<p className="gala-rehearsal-warning">Modo simulacro. Las votaciones se guardan separadas y no afectan a los resultados reales.</p>}
+   {currentMode==='rehearsal'&&<div className="gala-test-link">
+      <strong>Enlace privado de la comisión</strong>
+      <p>Compártelo solo con quienes participarán en el simulacro. La portada normal no mostrará los nominados de prueba.</p>
+      <div className="gala-test-link-actions"><input aria-label="Enlace para el simulacro" readOnly value={rehearsalInvite?window.location.origin+'/?ensayo='+rehearsalInvite:''}/>
+        <button type="button" disabled={!rehearsalInvite} onClick={()=>navigator.clipboard.writeText(window.location.origin+'/?ensayo='+rehearsalInvite).then(()=>setNotice('Enlace de simulacro copiado.'),()=>setError('No se pudo copiar automáticamente. Selecciona el enlace manualmente.'))}>COPIAR ENLACE</button>
+      </div>
+      <small>SIMULACRO ACTIVO · Los votos de prueba no cuentan para la gala real.</small>
+    </div>}
    {currentMode==='live'&&!settings.voting_open&&settings.unlocked_order<MAX&&<p className="gala-rehearsal-warning">Para revelar resultados deben haberse desbloqueado los diez premios. Puedes reabrir la votación y continuar cuando lo necesites.</p>}
    <div className="gala-round-title"><span>ACTIVAR CADA PREMIO</span><span>ORDEN DE LA CEREMONIA</span></div>
    <div className="gala-award-control-list">{awards.map(a=>{
