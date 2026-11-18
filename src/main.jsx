@@ -5,6 +5,7 @@ import './styles.css';
 import Admin from './Admin';
 import YearGallery from './YearGallery';
 import GuidedVoting from './GuidedVoting';
+import HallOfFame from './HallOfFame';
 import { supabase } from './supabase';
 
 const EXTRA_SLUGS = ['guante-de-mickey','cachorro-del-ano'];
@@ -64,6 +65,7 @@ function App(){
    <a href="#nominados" onClick={()=>{backToList();setMenu(false)}}>Categorías</a>
    <a href="#premios" onClick={()=>setMenu(false)}>Grandes premios</a>
    <a href="#votacion" onClick={()=>setMenu(false)}>Votaciones</a>
+   <a href="#hall-of-fame" onClick={()=>setMenu(false)}>Hall of Fame</a>
    <a href="/admin" className="nav-admin-mobile" onClick={()=>setMenu(false)}><Shield size={15}/> Administración</a>
   </nav>
   <div className="header-actions"><a href="/admin" className="admin-access"><LockKeyhole size={14}/><span>Administración</span></a><a href="#nominados" className="header-vote">DESCUBRE LOS NOMINADOS <ArrowRight size={15}/></a></div>
@@ -121,6 +123,7 @@ function App(){
     <div className="prize-copy"><span className="eyebrow gold-text">EL GALARDÓN MÁS CODICIADO</span><span className="prize-index">GRAN PREMIO · ELECCIÓN DEL DIRECTOR</span><h3>El Guante<br/><em>de Mickey.</em></h3><p>El director elige al ganador entre <strong>cualquier músico de la banda</strong>. No hay lista de nominados ni votación popular para este galardón.</p><div className="prize-divider"/><span className="prize-meta">UN SOLO ELEGIDO. UNA DECISIÓN DEL DIRECTOR.</span>{reveal&&<div className="finale-winner-callout"><span>GANADOR ELEGIDO POR EL DIRECTOR</span>{directorWinner?<><strong>{directorWinner.winner_name}</strong>{directorWinner.photo_url&&<img className="director-winning-photo" src={directorWinner.photo_url} alt={'Ganador del Guante de Mickey: '+directorWinner.winner_name}/>}</>:<strong>Pendiente de registrar</strong>}</div>}</div>
    </article>
   </section>
+  <HallOfFame/>
   <section id="votacion" className="voting-section">
     <div className="voting-header"><span className="eyebrow gold-text">03 / EL VEREDICTO</span><h2>Tu voto, <em>premio a premio.</em></h2><p>La organización irá abriendo los premios durante la cena. Selecciona un nombre, confirma tu voto y espera a que se desbloquee el siguiente premio.</p></div>
     <GuidedVoting/>
