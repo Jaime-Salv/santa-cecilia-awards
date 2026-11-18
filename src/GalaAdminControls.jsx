@@ -39,6 +39,16 @@ export default function GalaAdminControls(){
   else setNotice(success||'Control actualizado.');
   await refresh();setBusy(false);
  }
+ async function startRehearsal(){
+   if(!window.confirm('¿Empezar un simulacro nuevo? Se borrarán los votos anteriores del simulacro; no se tocará ningún voto real.'))return;
+   setBusy(true);setError('');setNotice('');
+   const cleared=await supabase.rpc('sca_gala_reset_rehearsal');
+   if(cleared.error){setError('No se pudo limpiar el simulacro: '+cleared.error.message);setBusy(false);return}
+   const {error:e}=await supabase.from('sca_settings').update({gala_mode:'rehearsal',voting_open:true,unlocked_order:0,results_published:false,updated_at:new Date().toISOString()}).eq('id',1);
+   if(e)setError('No se pudo iniciar el simulacro: '+e.message);
+   else setNotice('Simulacro nuevo preparado con cero votos. Ahora activa el primer premio.');
+   await refresh();setBusy(false);
+ }
  async function resetTestVotes(){
   if(!window.confirm('¿Borrar TODOS los votos del simulacro? Los votos reales no se tocarán.'))return;
   setBusy(true);setError('');setNotice('');
@@ -59,7 +69,7 @@ export default function GalaAdminControls(){
    <div className="gala-overview"><div><span>ESTADO</span><strong>{modes[currentMode]}</strong></div><div><span>PREMIOS DESBLOQUEADOS</span><strong>{settings.unlocked_order} / {MAX}</strong></div><div><span>VOTACIÓN</span><strong>{settings.voting_open?'Abierta':'Cerrada'}</strong></div></div>
    <div className="gala-mode-buttons">
     {currentMode==='inactive'&&<>
-     <button className="admin-primary" disabled={busy} onClick={()=>change({gala_mode:'rehearsal',voting_open:true,unlocked_order:0,results_published:false},'¿Iniciar un SIMULACRO? Los votos irán a una base separada y no contarán en la gala real.','Simulacro activado. Abre ahora el primer premio.')}><FlaskConical size={17}/> Iniciar simulacro</button>
+     <button className="admin-primary" disabled={busy} onClick={startRehearsal}><FlaskConical size={17}/> Iniciar simulacro</button>
      <button disabled={busy} onClick={()=>change({gala_mode:'live',voting_open:true,unlocked_order:0,results_published:false},'¿INICIAR LA GALA REAL? A partir de este momento se contabilizarán votos reales. Comprueba que has terminado el simulacro.','Gala real iniciada. Abre el primer premio cuando corresponda.')}><Play size={17}/> Preparar votación real</button>
     </>}
     {currentMode==='rehearsal'&&<>
