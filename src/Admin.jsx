@@ -15,7 +15,6 @@ export default function Admin(){
  const [password,setPassword]=React.useState('');
  const [error,setError]=React.useState('');
  const [busy,setBusy]=React.useState(false);
- const [settings,setSettings]=React.useState({voting_open:false,results_published:false});
  const [awards,setAwards]=React.useState([]);
  const [nominees,setNominees]=React.useState([]);
  const [photoUploading,setPhotoUploading]=React.useState(null);
@@ -49,13 +48,6 @@ export default function Admin(){
    e.preventDefault();setBusy(true);setError('');
    const {error}=await supabase.auth.signInWithPassword({email:email.trim(),password});
    if(error)setError('No se ha podido iniciar sesión. Comprueba el correo y la contraseña.');
-   setBusy(false);
- }
- async function changeSetting(key,value){
-   setBusy(true);setError('');
-   const {error}=await supabase.from('sca_settings').update({[key]:value,updated_at:new Date().toISOString()}).eq('id',1);
-   if(error)setError('No se pudo guardar: '+error.message);
-   else await refresh();
    setBusy(false);
  }
 
@@ -139,12 +131,11 @@ export default function Admin(){
  <section className="admin-panel admin-photos">
    <span className="admin-eyebrow">CANDIDATOS DE LA GALA</span>
    <h2>Revisar nominados</h2>
-   <p>Las nominaciones del documento original están en borrador. Confirma cada una antes de hacerla visible públicamente. Arrastra aquí las fotos verticales y los vídeos MP4 sobre cada nominado, o selecciona archivos desde tu equipo.</p>
+   <p>Los nombres definitivos ya están cargados. Arrastra fotos verticales o vídeos MP4 sobre cada nominado. Todo este material permanecerá oculto al público hasta que reveles los resultados al terminar la gala.</p>
    <div className="admin-nominee-list">{awards.filter(a=>nominees.some(n=>n.award_id===a.id)).map(a=><details key={a.id} className="admin-nominee-group">
-     <summary><span>{a.title}</span><small>{nominees.filter(n=>n.award_id===a.id&&n.published).length} / {nominees.filter(n=>n.award_id===a.id).length} publicados</small></summary>
+     <summary><span>{a.title}</span><small>{nominees.filter(n=>n.award_id===a.id).length} nominados</small></summary>
      <div className="admin-nominee-items">{nominees.filter(n=>n.award_id===a.id).map(n=><article className="admin-nominee-item" key={n.id}>
        <div className="admin-nominee-controls"><strong>{n.name}</strong><NomineeMediaAdmin nominee={n} busy={busy||Boolean(photoUploading)} onUpload={uploadNomineeMedia} onSave={updateNominee}/></div>
-       <button type="button" disabled={busy||Boolean(photoUploading)} className={n.published?'admin-danger':'admin-primary'} onClick={()=>updateNominee(n,{published:!n.published})}>{n.published?'Ocultar':'Publicar'}</button>
      </article>)}</div>
    </details>)}</div>
  </section>
