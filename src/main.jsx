@@ -4,6 +4,7 @@ import { ArrowRight, ArrowLeft, ArrowDown, LockKeyhole, Award, Menu, X, Shield, 
 import './styles.css';
 import Admin from './Admin';
 import YearGallery from './YearGallery';
+import GuidedVoting from './GuidedVoting';
 import { supabase } from './supabase';
 
 const EXTRA_SLUGS = ['guante-de-mickey','cachorro-del-ano'];
@@ -25,26 +26,30 @@ function App(){
  const [categories,setCategories]=React.useState([]);
  const [selected,setSelected]=React.useState(null);
  const [loading,setLoading]=React.useState(true);
- const [votingOpen,setVotingOpen]=React.useState(false);
+ const [gala,setGala]=React.useState({gala_mode:'inactive',voting_open:false,results_published:false,unlocked_order:0});
+ const [publishedCounts,setPublishedCounts]=React.useState({});
  React.useEffect(()=>{
   let active=true;
   async function load(){
-   const [awards,nominees,settings]=await Promise.all([
+   const [awards,nominees,settings,results]=await Promise.all([
     supabase.from('sca_awards').select('id,title,description,slug,image_url,display_order').order('display_order'),
     supabase.from('sca_nominees').select('id,award_id,name,description,photo_url,video_url').order('display_order'),
-    supabase.from('sca_settings').select('voting_open').eq('id',1).maybeSingle()
+    supabase.from('sca_settings').select('voting_open,gala_mode,results_published,unlocked_order').eq('id',1).maybeSingle(),
+    supabase.rpc('sca_gala_public_results')
    ]);
    if(!active)return;
    if(!awards.error)setCategories((awards.data||[]).map(a=>({...a,nominees:(nominees.data||[]).filter(n=>n.award_id===a.id)})));
-   setVotingOpen(Boolean(settings.data?.voting_open));
+   if(!settings.error&&settings.data)setGala(settings.data);
+   if(!results.error){const map={};(results.data||[]).forEach(r=>map[r.nominee_id]=Number(r.vote_count));setPublishedCounts(map)}
    setLoading(false);
   }
-  load();return()=>{active=false};
+  load();const interval=setInterval(load,6500);return()=>{active=false;clearInterval(interval)};
  },[]);
  const regular=categories.filter(c=>!EXTRA_SLUGS.includes(c.slug));
  const glove=categories.find(c=>c.slug===MAIN_GLOVE);
  const puppy=categories.find(c=>c.slug===PUPPY);
  const active=regular.find(c=>c.slug===selected);
+ const reveal=gala.gala_mode==='finished'&&gala.results_published;
  function openCategory(slug){setSelected(slug);window.requestAnimationFrame(()=>document.getElementById('nominados')?.scrollIntoView({behavior:'smooth'}));}
  function backToList(){setSelected(null);window.requestAnimationFrame(()=>document.getElementById('nominados')?.scrollIntoView({behavior:'smooth'}));}
  return <>
@@ -76,7 +81,7 @@ function App(){
   <section id="nominados" className="nominees-section category-hub">
    <div className="section-topline"><span>01 / LAS CATEGORÍAS</span><span>SANTA CECILIA AWARDS 2026</span></div>
    {!active ? <>
-    <div className="nominees-heading"><span className="eyebrow gold-text">NUEVE PREMIOS, INFINITAS HISTORIAS</span><h2>Los protagonistas<br/><em>de la gala.</em></h2><p>Elige una categoría para descubrir a sus nominados, sus fotografías y los vídeos de los momentos más memorables.</p></div>
+    <div className="nominees-heading"><span className="eyebrow gold-text">NUEVE PREMIOS, INFINITAS HISTORIAS</span><h2>Los protagonistas<br/><em>de la gala.</em></h2><p>Las nominaciones permanecerán secretas durante la cena. Los nombres aparecerán al votar cada premio y las fotos se revelarán al finalizar.</p></div>
     {loading ? <div className="nominees-empty">Cargando categorías…</div> : regular.length ? <div className="award-category-grid">{regular.map((c,i)=>
      <button type="button" className="award-category-link" onClick={()=>openCategory(c.slug)} key={c.id}>
       <span className="category-top"><span>PREMIO {String(i+1).padStart(2,'0')}</span><Award size={19} strokeWidth={1.3}/></span>
@@ -87,25 +92,14 @@ function App(){
    </> : <>
     <button className="back-categories" onClick={backToList}><ArrowLeft size={16}/> TODAS LAS CATEGORÍAS</button>
     <div className="nominee-detail-intro"><span className="eyebrow gold-text">SANTA CECILIA AWARDS · NOMINACIONES</span><h2>{active.title}</h2>{active.description&&<p>{active.description}</p>}</div>
-    {active.nominees.length ? <div className="nominee-detail-grid">{active.nominees.map((n,i)=><article className="nominee-detail-card" key={n.id}>
-     <div className="nominee-detail-media">
-      {n.photo_url
-        ? <img src={n.photo_url} alt={'Fotografía de '+n.name} loading="lazy"/>
-        : !n.video_url || !n.video_url.toLowerCase().split('?')[0].endsWith('.mp4')
-          ? <div className="no-nominee-image"><ImageIcon size={27} strokeWidth={1}/><span>FOTOGRAFÍA PENDIENTE</span></div>
-          : <video src={n.video_url} controls playsInline preload="metadata" aria-label={'Vídeo de '+n.name}/>}
-     </div>
-     <div className="nominee-detail-info">
-      <span>NOMINADO {String(i+1).padStart(2,'0')}</span>
-      <h3>{n.name}</h3>
-      {n.description&&<p>{n.description}</p>}
-      {n.video_url && (n.video_url.toLowerCase().split('?')[0].endsWith('.mp4')
-        ? n.photo_url
-          ? <div className="nominee-extra-video"><span><Film size={14}/> VÍDEO DEL NOMINADO</span><video src={n.video_url} controls playsInline preload="metadata" aria-label={'Vídeo de '+n.name}/></div>
-          : null
-        : <a href={n.video_url} target="_blank" rel="noopener noreferrer"><Film size={15}/> VER VÍDEO DEL MOMENTO <ArrowRight size={14}/></a>)}
-     </div>
-    </article>)}</div> : <div className="nominees-empty"><Award size={25}/><strong>Nominados pendientes de publicación</strong><span>La organización está terminando de revisar esta categoría.</span></div>}
+    {!reveal ? <div className="nominees-empty nominees-secret"><LockKeyhole size={29}/><strong>Nominados ocultos hasta la revelación</strong><span>La organización los anunciará durante el proceso de votación, premio por premio y sin fotografías. Las fotos y los vídeos se mostrarán cuando se publiquen los resultados finales.</span><a href="#votacion" className="inline-link">IR A LA VOTACIÓN <ArrowRight size={15}/></a></div>
+    : active.nominees.length ? <div className="nominee-detail-grid">{active.nominees.map((n,i)=><article className="nominee-detail-card" key={n.id}>
+      <div className="nominee-detail-media">{n.photo_url?<img src={n.photo_url} alt={'Fotografía de '+n.name} loading="lazy"/>:n.video_url&&n.video_url.toLowerCase().split('?')[0].endsWith('.mp4')?<video src={n.video_url} controls playsInline preload="metadata" aria-label={'Vídeo de '+n.name}/>:<div className="no-nominee-image"><ImageIcon size={27} strokeWidth={1}/><span>FOTOGRAFÍA PENDIENTE</span></div>}</div>
+      <div className="nominee-detail-info"><span>NOMINADO {String(i+1).padStart(2,'0')}</span><h3>{n.name}</h3>{n.description&&<p>{n.description}</p>}
+        <div className="nominee-final-votes">{publishedCounts[n.id]||0} votos</div>
+        {n.video_url&&(n.video_url.toLowerCase().split('?')[0].endsWith('.mp4')?n.photo_url?<div className="nominee-extra-video"><span><Film size={14}/> VÍDEO DEL NOMINADO</span><video src={n.video_url} controls playsInline preload="metadata"/></div>:null:<a href={n.video_url} target="_blank" rel="noopener noreferrer"><Film size={15}/> VER VÍDEO DEL MOMENTO <ArrowRight size={14}/></a>)}
+      </div>
+     </article>)}</div> : <div className="nominees-empty"><Award size={25}/><strong>Sin nominados disponibles</strong><span>Consulta de nuevo más tarde.</span></div>}
     <button className="back-categories bottom" onClick={backToList}><ArrowLeft size={16}/> VOLVER A LOS PREMIOS</button>
    </>}
   </section>
@@ -122,12 +116,10 @@ function App(){
     <div className="prize-copy"><span className="eyebrow gold-text">EL GALARDÓN MÁS CODICIADO</span><span className="prize-index">GRAN PREMIO · ELECCIÓN DEL DIRECTOR</span><h3>El Guante<br/><em>de Mickey.</em></h3><p>El director elige al ganador entre <strong>cualquier músico de la banda</strong>. No hay lista de nominados ni votación popular para este galardón.</p><div className="prize-divider"/><span className="prize-meta">UN SOLO ELEGIDO. UNA DECISIÓN DEL DIRECTOR.</span></div>
    </article>
   </section>
-  <section id="votacion" className="voting-section"><div className="voting-frame">
-   <span className="eyebrow gold-text">03 / EL VEREDICTO</span><h2>La última palabra<br/><em>es tuya.</em></h2>
-   <p>La votación del público será anónima y sin cuentas. El Guante de Mickey queda fuera: lo decide el director.</p>
-   <div className="voting-status"><LockKeyhole size={18}/>{votingOpen?'VOTACIÓN EN PREPARACIÓN':'VOTACIONES CERRADAS'}</div>
-   <small>La papeleta anónima todavía no está disponible. No se están recogiendo votos.</small>
-  </div></section>
+  <section id="votacion" className="voting-section">
+    <div className="voting-header"><span className="eyebrow gold-text">03 / EL VEREDICTO</span><h2>Tu voto, <em>premio a premio.</em></h2><p>La organización irá abriendo los premios durante la cena. Selecciona un nombre, confirma tu voto y espera a que se desbloquee el siguiente premio.</p></div>
+    <GuidedVoting/>
+  </section>
  </main>
  <footer className="site-footer"><div className="footer-brand"><strong>SC <span>✦</span> AWARDS</strong><small>SANTA CECILIA · EDICIÓN 2026</small></div><p>Hecho para la banda, con mucho cariño y poca vergüenza.</p><a href="/admin"><LockKeyhole size={13}/> Acceso administración</a></footer>
  </>;
