@@ -6,18 +6,20 @@ import './hall-of-fame.css';
 export default function HallOfFame(){
  const [editions,setEditions]=React.useState([]);
  const [winners,setWinners]=React.useState([]);
+ const [videos,setVideos]=React.useState([]);
  const [year,setYear]=React.useState(null);
  const [loading,setLoading]=React.useState(true);
  React.useEffect(()=>{
   let active=true;
   async function load(){
-   const [e,w]=await Promise.all([
+   const [e,w,v]=await Promise.all([
     supabase.from('sca_editions').select('id,year,title').eq('status','archived').eq('published',true).order('year',{ascending:false}),
-    supabase.from('sca_hall_of_fame').select('id,edition_id,award_title,winner_name,photo_url,video_url,votes,winner_type,award_order').order('award_order')
+    supabase.from('sca_hall_of_fame').select('id,edition_id,award_title,winner_name,photo_url,video_url,votes,winner_type,award_order').order('award_order'),
+    supabase.from('sca_edition_videos').select('id,edition_id,title,youtube_id,display_order').order('display_order')
    ]);
    if(!active)return;
-   if(!e.error&& !w.error){
-    setEditions(e.data||[]);setWinners(w.data||[]);
+   if(!e.error&& !w.error&& !v.error){
+    setEditions(e.data||[]);setWinners(w.data||[]);setVideos(v.data||[]);
     setYear(v=>v!==null&&(e.data||[]).some(x=>x.year===v)?v:(e.data||[])[0]?.year||null);
    }
    setLoading(false);
@@ -27,6 +29,7 @@ export default function HallOfFame(){
  },[]);
  const edition=editions.find(e=>e.year===year);
  const records=winners.filter(w=>w.edition_id===edition?.id);
+ const editionVideos=videos.filter(v=>v.edition_id===edition?.id);
  const director=records.filter(w=>w.winner_type==='director');
  const publicAwards=Object.values(records.filter(w=>w.winner_type==='public').reduce((m,w)=>{
   const key=w.award_order;
@@ -40,6 +43,13 @@ export default function HallOfFame(){
     <>
      <div className="hof-years">{editions.map(e=><button type="button" key={e.id} className={e.year===year?'selected':''} onClick={()=>setYear(e.year)}><CalendarDays size={16}/>{e.year}</button>)}</div>
      <div className="hof-year-title"><span>EDICIÓN {year}</span><strong>{edition?.title}</strong><small>{records.length} galardones registrados</small></div>
+     {editionVideos.length>0&&<section className="hof-videos" aria-label={'Vídeos de la gala '+year}>
+       <div className="hof-videos-heading"><span className="eyebrow gold-text">REVIVE LA GALA</span><h3>Los vídeos de <em>{year}.</em></h3><p>Los mejores momentos de la edición, para volver a disfrutarlos.</p></div>
+       <div className="hof-videos-grid">{editionVideos.map(v=><article className="hof-video-card" key={v.id}>
+        <div className="hof-video-frame"><iframe loading="lazy" src={'https://www.youtube-nocookie.com/embed/'+v.youtube_id} title={v.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen/></div>
+        <div className="hof-video-caption"><strong>{v.title}</strong><a href={'https://www.youtube.com/watch?v='+v.youtube_id} target="_blank" rel="noopener noreferrer">Ver en YouTube ↗</a></div>
+       </article>)}</div>
+     </section>}
      {director.map(w=><article className="hof-director" key={w.id}>
        <div className="hof-director-photo">{w.photo_url?<img src={w.photo_url} alt={w.winner_name} loading="lazy"/>:<Crown size={60}/>}</div>
        <div><span className="eyebrow gold-text">PREMIO PRINCIPAL · ELECCIÓN DEL DIRECTOR</span><h3>{w.award_title}</h3><strong>{w.winner_name}</strong><p>Galardonado en la edición {year}</p></div>
