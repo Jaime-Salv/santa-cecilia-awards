@@ -13,3 +13,58 @@
 .hof-video-caption strong{font:500 21px 'Cormorant Garamond',Georgia,serif}
 .hof-video-caption a{color:#e4c28a;font-size:12px;text-decoration:underline}
 @media(max-width:680px){.hof-videos-grid{grid-template-columns:1fr}.hof-videos{padding:24px 0}}
+
+/* Archivo en página propia: tarjetas compactas, sin sobrecargar el inicio */
+.hall-page{min-height:100vh;background:#100d09;color:#efdfc6}
+.hall-page-header{display:flex;justify-content:space-between;align-items:center;gap:16px;max-width:1260px;margin:auto;padding:20px 26px;border-bottom:1px solid #5c452d}
+.hall-page-brand{display:flex;align-items:center;gap:12px;color:#e8d0a5;font-size:12px;letter-spacing:2px;text-decoration:none}
+.hall-page-brand .site-monogram{flex-shrink:0}
+.hall-page-back{display:inline-flex;align-items:center;gap:9px;color:#d1b17b;text-decoration:none;font-size:11px;letter-spacing:1.4px;white-space:nowrap}
+.hall-page-footer{max-width:1260px;padding:28px 26px;margin:auto;border-top:1px solid #5c452d;display:flex;justify-content:space-between;gap:16px;align-items:center;color:#a68b68;font-size:10px;letter-spacing:1.2px}
+.hall-page-footer a{display:inline-flex;align-items:center;gap:7px;color:#d5b783;text-decoration:none}
+.hall-page .hof-section{padding:50px max(4%,calc((100vw - 1180px)/2)) 70px}
+.hall-page .hof-intro{margin-bottom:25px}
+.hall-page .hof-intro h2{font-size:clamp(45px,6vw,76px);margin:9px 0 13px}
+.hall-page .hof-intro p{font-size:12px}
+.hall-page .hof-years{margin-bottom:25px}
+.hall-page .hof-year-title{margin-bottom:18px}
+.hall-page .hof-director{min-height:165px;grid-template-columns:140px 1fr;margin:20px 0 24px}
+.hall-page .hof-director-photo{min-height:165px}
+.hall-page .hof-director-photo img{max-height:210px}
+.hall-page .hof-director>div:last-child{padding:20px}
+.hall-page .hof-director h3{font-size:34px;margin:3px 0}
+.hall-page .hof-director strong{font-size:29px}
+.hall-page .hof-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.hall-page .hof-award{padding:14px 15px;min-height:125px}
+.hall-page .hof-award-label{font-size:9px}
+.hall-page .hof-award h3{font-size:25px;line-height:1.05;margin:9px 0 12px}
+.hall-page .hof-winner{gap:10px;margin:5px 0;align-items:center}
+.hall-page .hof-winner img,.hall-page .hof-no-photo{height:56px;width:45px}
+.hall-page .hof-no-photo svg{width:19px}
+.hall-page .hof-winner strong{font-size:12px;line-height:1.35}
+.hall-page .hof-winner small,.hall-page .hof-winner a{font-size:10px}
+.hall-page .hof-videos{margin:28px 0 20px;padding:23px 0 26px}
+.hall-page .hof-videos-heading{margin-bottom:18px}
+.hall-page .hof-videos-heading h3{font-size:39px;margin:7px 0}
+.hall-page .hof-videos-heading p{font-size:11px}
+.hall-page .hof-videos-grid{gap:14px;max-width:920px;margin:auto}
+.hall-page .hof-video-caption{padding:11px 14px}
+.hall-page .hof-video-caption strong{font-size:17px}
+@media(max-width:1050px){.hall-page .hof-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:720px){
+ .hall-page-header{padding:14px 16px}
+ .hall-page-brand{font-size:10px;letter-spacing:1px}
+ .hall-page-back{font-size:10px;letter-spacing:0}
+ .hall-page .hof-section{padding:38px 16px 55px}
+ .hall-page .hof-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .hall-page .hof-award{padding:12px;min-height:120px}
+ .hall-page .hof-award h3{font-size:24px}
+ .hall-page .hof-director{grid-template-columns:100px 1fr;min-height:140px}
+ .hall-page .hof-director-photo{min-height:140px}
+ .hall-page .hof-director>div:last-child{padding:13px}
+ .hall-page .hof-director h3{font-size:27px}
+ .hall-page .hof-director strong{font-size:25px}
+ .hall-page .hof-videos-grid{grid-template-columns:1fr}
+ .hall-page-footer{padding:20px 16px}
+}
+@media(max-width:370px){.hall-page .hof-grid{grid-template-columns:1fr}}
