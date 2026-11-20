@@ -65,7 +65,7 @@ function App(){
    <a href="#nominados" onClick={()=>{backToList();setMenu(false)}}>Categorías</a>
    <a href="#premios" onClick={()=>setMenu(false)}>Grandes premios</a>
    <a href="#votacion" onClick={()=>setMenu(false)}>Votaciones</a>
-   <a href="#hall-of-fame" onClick={()=>setMenu(false)}>Hall of Fame</a>
+   <a href="/hall-of-fame" onClick={()=>setMenu(false)}>Hall of Fame</a>
    <a href="/admin" className="nav-admin-mobile" onClick={()=>setMenu(false)}><Shield size={15}/> Administración</a>
   </nav>
   <div className="header-actions"><a href="/admin" className="admin-access"><LockKeyhole size={14}/><span>Administración</span></a><a href="#nominados" className="header-vote">DESCUBRE LOS NOMINADOS <ArrowRight size={15}/></a></div>
@@ -123,7 +123,6 @@ function App(){
     <div className="prize-copy"><span className="eyebrow gold-text">EL GALARDÓN MÁS CODICIADO</span><span className="prize-index">GRAN PREMIO · ELECCIÓN DEL DIRECTOR</span><h3>El Guante<br/><em>de Mickey.</em></h3><p>El director elige al ganador entre <strong>cualquier músico de la banda</strong>. No hay lista de nominados ni votación popular para este galardón.</p><div className="prize-divider"/><span className="prize-meta">UN SOLO ELEGIDO. UNA DECISIÓN DEL DIRECTOR.</span>{reveal&&<div className="finale-winner-callout"><span>GANADOR ELEGIDO POR EL DIRECTOR</span>{directorWinner?<><strong>{directorWinner.winner_name}</strong>{directorWinner.photo_url&&<img className="director-winning-photo" src={directorWinner.photo_url} alt={'Ganador del Guante de Mickey: '+directorWinner.winner_name}/>}</>:<strong>Pendiente de registrar</strong>}</div>}</div>
    </article>
   </section>
-  <HallOfFame/>
   <section id="votacion" className="voting-section">
     <div className="voting-header"><span className="eyebrow gold-text">03 / EL VEREDICTO</span><h2>Tu voto, <em>premio a premio.</em></h2><p>La organización irá abriendo los premios durante la cena. Selecciona un nombre, confirma tu voto y espera a que se desbloquee el siguiente premio.</p></div>
     <GuidedVoting/>
@@ -132,4 +131,15 @@ function App(){
  <footer className="site-footer"><div className="footer-brand"><strong>SC <span>✦</span> AWARDS</strong><small>SANTA CECILIA · EDICIÓN 2026</small></div><p>Hecho para la banda, con mucho cariño y poca vergüenza.</p><a href="/admin"><LockKeyhole size={13}/> Acceso administración</a></footer>
  </>;
 }
-createRoot(document.getElementById('root')).render(window.location.pathname.replace(/\/$/,'')==='/admin'?<Admin/>:<App/>);
+function HallPage(){
+ return <div className="hall-page">
+   <header className="hall-page-header">
+     <a className="hall-page-brand" href="/"><span className="site-monogram">SC<span>✦</span></span><span>SANTA CECILIA <b>AWARDS</b></span></a>
+     <a className="hall-page-back" href="/"><ArrowLeft size={17}/> VOLVER A LA GALA</a>
+   </header>
+   <main><HallOfFame/></main>
+   <footer className="hall-page-footer"><span>SANTA CECILIA AWARDS · ARCHIVO HISTÓRICO</span><a href="/">Volver al inicio <ArrowRight size={15}/></a></footer>
+ </div>;
+}
+const currentPath=window.location.pathname.replace(/\/$/,'');
+createRoot(document.getElementById('root')).render(currentPath==='/admin'?<Admin/>:currentPath==='/hall-of-fame'?<HallPage/>:<App/>);
